@@ -15,7 +15,7 @@
 <meta name="theme-color" content="#2f6fed">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f6f2ea; --surface: #fffdf8; --ink: #1d1b18; --muted: #7a736b;
@@ -398,7 +398,7 @@
     font: inherit; font-size: 14px; font-weight: 600; background: var(--surface); color: var(--ink); outline: none; text-align: center;
   }
   .dd-btn.person { border-color: var(--pri); background: color-mix(in srgb, var(--pri) 12%, var(--surface)); }
-  .rule-note { font-size: 12.5px; font-weight: 500; color: var(--on-bg-muted); margin: -4px 0 12px; }
+  .rule-note { font-size: 12.5px; font-weight: 500; color: var(--on-bg-muted); margin: 18px 0 12px; }
   .check.cam { border: 2px dashed var(--accent); color: var(--accent); }
   .check.cam:hover { background: var(--accent-soft); }
   .task.done .check.cam { border-style: solid; }
@@ -510,7 +510,7 @@
   .toast button { border: 0; background: var(--accent); color: #fff; border-radius: 9px; padding: 6px 12px; font-weight: 700; font-size: 13px; }
   .toast button[hidden] { display: none; }
 
-  footer { text-align: center; color: var(--on-bg-muted); font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: lowercase; margin-top: 40px; }
+  footer { text-align: center; color: var(--on-bg-muted); font-size: 12px; font-weight: 300; letter-spacing: .5em; text-indent: .5em; text-transform: lowercase; margin-top: 44px; opacity: .85; }
 
   @keyframes fade { from { opacity: 0; } }
   @keyframes slide { from { opacity: 0; transform: translateY(6px); } }
@@ -608,18 +608,6 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
     </button>
 
-    <div class="summary">
-      <div class="ring" id="ring">
-        <svg viewBox="0 0 70 70"><circle class="bgc" cx="35" cy="35" r="30"/><circle class="fg" id="ringFg" cx="35" cy="35" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"/></svg>
-        <span id="ringPct">0%</span>
-      </div>
-      <div class="sum-text">
-        <h3 id="dayTitle">Kegiatan hari ini</h3>
-        <p id="dayInfo"></p>
-        <p class="holiday" id="dayHoliday" hidden></p>
-      </div>
-    </div>
-
     <p class="rule-note">📷&nbsp; Setiap tugas baru bisa dicentang selesai setelah kamu mengirim foto bukti.</p>
     <div class="pri-pick" id="namePick"><span class="lbl">Nama:</span><button type="button" class="dd-btn" id="nameBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih nama"></button></div>
     <div class="pri-pick" id="taskPri"><span class="lbl">Jenis event:</span><button type="button" class="dd-btn" id="typeBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih jenis event"></button></div>
@@ -643,6 +631,17 @@
       <input type="text" id="taskText" placeholder="Mau ngapain hari ini?" aria-label="Kegiatan baru" maxlength="200">
       <button type="submit" aria-label="Tambah kegiatan"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Tambah</span></button>
     </form>
+    <div class="summary">
+      <div class="ring" id="ring">
+        <svg viewBox="0 0 70 70"><circle class="bgc" cx="35" cy="35" r="30"/><circle class="fg" id="ringFg" cx="35" cy="35" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"/></svg>
+        <span id="ringPct">0%</span>
+      </div>
+      <div class="sum-text">
+        <h3 id="dayTitle">Kegiatan hari ini</h3>
+        <p id="dayInfo"></p>
+        <p class="holiday" id="dayHoliday" hidden></p>
+      </div>
+    </div>
     <input type="file" id="taskPhoto" accept="image/*" capture="environment" hidden>
 
     <div class="pri-pick" id="nameFilter" role="group" aria-label="Tampilkan kegiatan milik" hidden><span class="lbl">Tampilkan:</span></div>
@@ -804,21 +803,14 @@
       tick: () => blip(2400, .016, .045, 'square'), tap: () => blip(1100, .04, .07, 'triangle'), swap,
       done: () => chord([1047, 1319, 1568], .07, .18, .08),            // satu kegiatan selesai
       allDone: () => chord([784, 988, 1175, 1568, 1976], .085, .2, .075), // semua kegiatan hari itu selesai
-      wheel: () => { // "tok" lembut seperti roda pemilih jam iPhone
+      wheel: () => { // "tuk" lembut dan ringan, seperti tetes kecil
         if (!state.feedback) return;
         const c = ac(); if (!c) return;
-        const t = c.currentTime;
-        // badan bunyi: nada sine pendek yang turun cepat
-        const o = c.createOscillator(), g = c.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(1750, t); o.frequency.exponentialRampToValueAtTime(950, t + .022);
-        g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.16, t + .0015); g.gain.exponentialRampToValueAtTime(.0001, t + .03);
-        o.connect(g).connect(c.destination); o.start(t); o.stop(t + .04);
-        // ujung renyah: desis sangat singkat lewat filter tinggi
-        const len = Math.floor(c.sampleRate * .006), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
-        const n = c.createBufferSource(), hp = c.createBiquadFilter(), ng = c.createGain();
-        n.buffer = buf; hp.type = 'highpass'; hp.frequency.value = 4500; ng.gain.value = .12;
-        n.connect(hp).connect(ng).connect(c.destination); n.start(t);
+        const t = c.currentTime, o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter();
+        o.type = 'sine'; o.frequency.setValueAtTime(1150, t); o.frequency.exponentialRampToValueAtTime(760, t + .035);
+        lp.type = 'lowpass'; lp.frequency.value = 2400;
+        g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.055, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .06);
+        o.connect(lp).connect(g).connect(c.destination); o.start(t); o.stop(t + .07);
       },
       note: () => { // catatan tersimpan: "srek" kertas lalu "ting"
         if (!state.feedback) return;
@@ -1428,7 +1420,7 @@
       b.onclick = () => box.scrollTo({ top: i * ROW, behavior: 'smooth' });
       return b;
     }));
-    let t, last = -1;
+    let last = -1;
     box.addEventListener('scroll', () => {
       const i = Math.round(box.scrollTop / ROW);
       if (i !== last) {
@@ -1437,8 +1429,8 @@
         if (!box._quiet) { sfx.wheel(); haptic(); }
       }
       if (box._quiet) return;
-      clearTimeout(t);
-      t = setTimeout(() => {
+      clearTimeout(box._t);
+      box._t = setTimeout(() => {
         const idx = Math.round(box.scrollTop / ROW), k = ((idx % n) + n) % n, mid = mid0 + k;
         if (Math.abs(idx - mid) >= n) { box._quiet = true; box.scrollTop = mid * ROW; setTimeout(() => { box._quiet = false; }, 80); }
         onPick(vals[k]);
@@ -1454,7 +1446,7 @@
   buildWheel($('#tpMins'), MINS, m => setTime((tpH || pad(new Date().getHours())) + ':' + m));
   function openTime(v) {
     timePop.hidden = !v; $('#timeBtn').setAttribute('aria-expanded', v);
-    if (!v) return;
+    if (!v) { clearTimeout($('#tpHours')._t); clearTimeout($('#tpMins')._t); return; }
     if (!$('#taskTime').value) { // belum diisi: tampilkan jam sekarang, dibulatkan ke 15 menit berikutnya
       const d = new Date(); d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
       tpH = pad(d.getHours()); tpM = pad(d.getMinutes());
@@ -1464,8 +1456,10 @@
   }
   $('#timeBtn').onclick = e => { e.stopPropagation(); openTime(timePop.hidden); };
   timePop.onclick = e => e.stopPropagation();
-  $('#tpOk').onclick = () => { setTime((tpH || '08') + ':' + (tpM || '00')); openTime(false); $('#taskText').focus(); };
-  $('#tpClear').onclick = () => { setTime(''); openTime(false); };
+  // Oke: ambil angka yang sedang di tengah roda (walau roda baru saja digeser)
+  const readWheel = (box, vals) => { const n = vals.length, i = Math.round(box.scrollTop / ROW); return vals[((i % n) + n) % n]; };
+  $('#tpOk').onclick = () => { setTime(readWheel($('#tpHours'), HOURS) + ':' + readWheel($('#tpMins'), MINS)); openTime(false); $('#taskText').focus(); };
+  $('#tpClear').onclick = () => { clearTimeout($('#tpHours')._t); clearTimeout($('#tpMins')._t); setTime(''); openTime(false); };
   document.addEventListener('click', () => { if (!timePop.hidden) openTime(false); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !timePop.hidden) openTime(false); });
   // Nama yang pernah dipakai, terbaru lebih dulu
