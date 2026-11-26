@@ -128,7 +128,17 @@
   .week-nav .icon-btn { width: 34px; height: 34px; border-radius: 10px; }
   .pill-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 12px; font-size: 13px; font-weight: 600; }
   .pill-btn[hidden] { display: none; }
-  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  /* Kalender: 3 halaman (sebelum, sekarang, sesudah). Minggu digeser ke samping, bulan digeser naik-turun */
+  .week {
+    position: relative; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+    scrollbar-width: none; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; margin: 0 -2px;
+  }
+  .week::-webkit-scrollbar { display: none; }
+  .cal-page { flex: 0 0 100%; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 7px 2px 4px; scroll-snap-align: start; scroll-snap-stop: always; }
+  .week.month { display: block; overflow-x: hidden; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior-y: contain; }
+  .week.month .cal-page { row-gap: 6px; }
+  .dow-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 0 0 0; margin-bottom: -3px; }
+  .dow-row[hidden] { display: none; }
   .chip {
     border: 1px solid var(--line); background: var(--surface); border-radius: 15px; padding: 10px 0 8px;
     display: flex; flex-direction: column; align-items: center; gap: 3px; transition: transform .15s, background .2s; position: relative;
@@ -157,7 +167,7 @@
   .chip.sel.red, .chip.sel.cuti { background: var(--accent); border-color: var(--accent); }
   .chip.today.red, .chip.today.cuti { border-color: var(--accent); }
   .leg-red { font-style: normal; font-weight: 800; color: var(--red); }
-  .week .dow.red { color: var(--red); }
+  .dow.red { color: var(--red); }
   .holiday { font-size: 12.5px; font-weight: 700; color: var(--red); margin-top: 3px; }
   .holiday[hidden] { display: none; }
   .check, .act, .icon-btn { padding: 0; }
@@ -208,7 +218,7 @@
   .note .who { padding: 3px 9px 3px 7px; }
   #notePri .pri-btn { background: color-mix(in srgb, var(--surface) 55%, transparent); }
   .week.month { row-gap: 6px; }
-  .week .dow { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 2px 0 2px; }
+  .dow { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 2px 0 2px; }
   .week.month .chip { padding: 8px 0 6px; border-radius: 12px; }
   .week.month .chip b { font-size: 15px; }
   .chip.out { opacity: .35; }
@@ -348,10 +358,11 @@
   .tp-grid button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
   .tp-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .tp-foot .pill-btn { font-size: 13px; }
-  .name-del { border: 0; background: none; padding: 5px 6px; font-size: 12px; font-weight: 700; color: var(--on-bg-muted); text-decoration: underline; text-underline-offset: 3px; }
-  .name-del.on { color: var(--red); }
-  #namePick.editing .pri-btn.person { border-style: dashed; border-color: var(--red); }
-  #namePick.editing .pri-btn.person::after { content: "✕"; font-size: 11px; font-weight: 800; color: var(--red); margin-left: 2px; }
+  .pri-btn .nx {
+    display: inline-grid; place-items: center; width: 17px; height: 17px; margin: 0 -5px 0 2px; border-radius: 50%;
+    font-size: 9px; font-weight: 900; color: var(--muted); background: color-mix(in srgb, var(--ink) 8%, transparent); transition: background .15s, color .15s;
+  }
+  .pri-btn .nx:hover { background: var(--red); color: #fff; }
   .rule-note { font-size: 12.5px; font-weight: 500; color: var(--on-bg-muted); margin: -4px 0 12px; }
   .check.cam { border: 2px dashed var(--accent); color: var(--accent); }
   .check.cam:hover { background: var(--accent-soft); }
@@ -547,6 +558,7 @@
         <button class="icon-btn" id="nextWeek" aria-label="Minggu berikutnya"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></button>
       </div>
     </div>
+    <div class="dow-row" id="dowRow" hidden aria-hidden="true"><span class="dow red">Min</span><span class="dow">Sen</span><span class="dow">Sel</span><span class="dow">Rab</span><span class="dow">Kam</span><span class="dow">Jum</span><span class="dow">Sab</span></div>
     <div class="week" id="week"></div>
     <div class="legend" id="calLegend" hidden>
       <span><i class="mark" data-type="sport"></i>Sport</span>
@@ -574,7 +586,7 @@
     </div>
 
     <p class="rule-note">📷&nbsp; Setiap tugas baru bisa dicentang selesai setelah kamu mengirim foto bukti.</p>
-    <div class="pri-pick" id="namePick" role="group" aria-label="Nama untuk kegiatan baru"><span class="lbl">Nama:</span><input type="text" class="name-input keep" id="nameInput" placeholder="+ Nama baru" maxlength="40" autocomplete="off" aria-label="Ketik nama baru"><button type="button" class="name-del keep" id="nameDelBtn" hidden>Hapus nama</button></div>
+    <div class="pri-pick" id="namePick" role="group" aria-label="Nama untuk kegiatan baru"><span class="lbl">Nama:</span><input type="text" class="name-input keep" id="nameInput" placeholder="+ Nama baru" maxlength="40" autocomplete="off" aria-label="Ketik nama baru"></div>
     <div class="pri-pick" id="taskPri"><span class="lbl">Jenis event:</span><button type="button" class="dd-btn" id="typeBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih jenis event"></button></div>
     <form class="add" id="addTask" autocomplete="off">
       <div class="time-pick">
@@ -756,7 +768,9 @@
     return {
       tick: () => blip(2400, .016, .045, 'square'), tap: () => blip(1100, .04, .07, 'triangle'), swap,
       done: () => chord([1047, 1319, 1568], .07, .18, .08),            // satu kegiatan selesai
-      allDone: () => chord([784, 988, 1175, 1568, 1976], .085, .2, .075) // semua kegiatan hari itu selesai
+      allDone: () => chord([784, 988, 1175, 1568, 1976], .085, .2, .075), // semua kegiatan hari itu selesai
+      add: () => chord([523, 1047], .06, .13, .09),                      // jadwal baru ditambahkan ("plop-ting")
+      page: () => chord([440], 0, .07, .05)                              // kalender digeser
     };
   })();
   let hapticBusy = false;
@@ -774,7 +788,7 @@
   document.addEventListener('click', e => {
     if (hapticBusy) return;
     const b = e.target.closest && e.target.closest('button, .chip-btn, label.acc');
-    if (!b || b.closest('.wheel') || b.classList.contains('tab')) return; // tab punya bunyi sendiri
+    if (!b || b.closest('.wheel') || b.classList.contains('tab') || b.matches('#addTask > button')) return; // tab & tambah punya bunyi sendiri
     sfx.tap(); haptic();
   }, true);
 
@@ -986,61 +1000,84 @@
     return keyOf(d);
   };
 
-  function renderWeek() {
-    const sel = fromKey(selected), open = !!state.calOpen;
-    $('#monthLabel').textContent = sel.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-    const wk = $('#week'); wk.innerHTML = ''; wk.classList.toggle('month', open);
-    const tk = todayKey();
-    let start, count;
-    if (open) {
-      const first = new Date(sel.getFullYear(), sel.getMonth(), 1), lead = first.getDay();
-      const dim = new Date(sel.getFullYear(), sel.getMonth() + 1, 0).getDate();
-      start = new Date(first); start.setDate(1 - lead);
-      count = Math.ceil((lead + dim) / 7) * 7;
-      ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].forEach((n, i) => wk.append(el('span', 'dow' + (i ? '' : ' red'), n)));
+  function makeChip(d, open, refMonth, tk) {
+    const k = keyOf(d), list = state.tasks[k] || [];
+    const hol = HOLIDAYS[k], red = d.getDay() === 0 || (hol && hol.kind !== 'C');
+    const b = el('button', 'chip' + (k === tk ? ' today' : '') + (k === selected ? ' sel' : '') + (open && d.getMonth() !== refMonth ? ' out' : '') + (red ? ' red' : '') + (hol && hol.kind === 'C' ? ' cuti' : '') + (hol ? ' hol' : ''));
+    if (hol) b.title = (hol.kind === 'C' ? 'Cuti bersama: ' : 'Libur: ') + hol.name + (hol.kind === 'K' ? ' (perkiraan)' : '');
+    if (!open) b.append(el('small', null, DAYS[d.getDay()]));
+    b.append(el('b', null, d.getDate()));
+    let info = '';
+    if (list.length && list.every(t => t.done)) {
+      // Semua selesai: lencana centang di sudut kanan atas tanggal
+      const c = el('span', 'mark done corner'); c.innerHTML = checkSm(9); b.append(c);
+      b.append(el('span', 'mark none'));
+      info = `, ${list.length} kegiatan, semua selesai`;
+    } else if (!list.length) {
+      b.append(el('span', 'mark none'));
     } else {
-      start = new Date(sel); start.setDate(sel.getDate() - sel.getDay());
-      count = 7;
+      const types = TYPE_ORDER.filter(ty => list.some(t => !t.done && typeOf(t) === ty));
+      if (types.length === 1) {
+        const mk = el('span', 'mark'); mk.dataset.type = types[0] || 'none'; mk.innerHTML = ticon(types[0], 10, 2.6); b.append(mk);
+      } else {
+        const dots = el('span', 'mark-dots');
+        types.slice(0, 4).forEach(ty => { const i = el('i'); i.dataset.type = ty || 'none'; dots.append(i); });
+        b.append(dots);
+      }
+      const left = list.filter(t => !t.done).length;
+      info = `, ${list.length} kegiatan, ${left} belum selesai` + (types.some(Boolean) ? ': ' + types.filter(Boolean).map(ty => TYPE_LABEL[ty]).join(', ') : '');
     }
+    b.setAttribute('aria-label', d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) + (hol ? ', ' + b.title : '') + info);
+    b.onclick = () => { selected = k; renderTasks(); };
+    return b;
+  }
+
+  function renderWeek() {
+    const sel = fromKey(selected), open = !!state.calOpen, tk = todayKey();
+    $('#monthLabel').textContent = sel.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    const wk = $('#week'); wk.classList.toggle('month', open);
+    $('#dowRow').hidden = !open;
+    const pages = [-1, 0, 1].map(off => {
+      const pg = el('div', 'cal-page');
+      let start, ref = null;
+      if (open) {
+        const m = fromKey(addMonths(selected, off)), first = new Date(m.getFullYear(), m.getMonth(), 1);
+        start = new Date(first); start.setDate(1 - first.getDay()); ref = first.getMonth();
+      } else {
+        start = fromKey(addDays(selected, off * 7)); start.setDate(start.getDate() - start.getDay());
+      }
+      for (let i = 0; i < (open ? 42 : 7); i++) { const d = new Date(start); d.setDate(start.getDate() + i); pg.append(makeChip(d, open, ref, tk)); }
+      if (off) { pg.inert = true; pg.setAttribute('aria-hidden', 'true'); }
+      return pg;
+    });
+    wk.replaceChildren(...pages);
+    // Tampilkan halaman tengah tanpa memicu pindah minggu/bulan
+    wk._quiet = true;
+    if (open) { wk.style.height = pages[1].offsetHeight + 'px'; wk.scrollLeft = 0; wk.scrollTop = pages[1].offsetTop; }
+    else { wk.style.height = ''; wk.scrollTop = 0; wk.scrollLeft = pages[1].offsetLeft; }
+    clearTimeout(wk._qt); wk._qt = setTimeout(() => { wk._quiet = false; }, 120);
     $('#calLegend').hidden = !open;
     $('#calToggle').setAttribute('aria-expanded', open);
     $('#calToggleText').textContent = open ? 'Tutup kalender' : 'Lihat sebulan';
     $('#prevWeek').setAttribute('aria-label', open ? 'Bulan sebelumnya' : 'Minggu sebelumnya');
     $('#nextWeek').setAttribute('aria-label', open ? 'Bulan berikutnya' : 'Minggu berikutnya');
-    for (let i = 0; i < count; i++) {
-      const d = new Date(start); d.setDate(start.getDate() + i);
-      const k = keyOf(d), list = state.tasks[k] || [];
-      const hol = HOLIDAYS[k], red = d.getDay() === 0 || (hol && hol.kind !== 'C');
-      const b = el('button', 'chip' + (k === tk ? ' today' : '') + (k === selected ? ' sel' : '') + (open && d.getMonth() !== sel.getMonth() ? ' out' : '') + (red ? ' red' : '') + (hol && hol.kind === 'C' ? ' cuti' : '') + (hol ? ' hol' : ''));
-      if (hol) b.title = (hol.kind === 'C' ? 'Cuti bersama: ' : 'Libur: ') + hol.name + (hol.kind === 'K' ? ' (perkiraan)' : '');
-      if (!open) b.append(el('small', null, DAYS[d.getDay()]));
-      b.append(el('b', null, d.getDate()));
-      let info = '';
-      if (list.length && list.every(t => t.done)) {
-        // Semua selesai: lencana centang di sudut kanan atas tanggal
-        const c = el('span', 'mark done corner'); c.innerHTML = checkSm(9); b.append(c);
-        const sp = el('span', 'mark none'); b.append(sp);
-        info = `, ${list.length} kegiatan, semua selesai`;
-      } else if (!list.length) {
-        b.append(el('span', 'mark none'));
-      } else {
-        const types = TYPE_ORDER.filter(ty => list.some(t => !t.done && typeOf(t) === ty));
-        if (types.length === 1) {
-          const mk = el('span', 'mark'); mk.dataset.type = types[0] || 'none'; mk.innerHTML = ticon(types[0], 10, 2.6); b.append(mk);
-        } else {
-          const dots = el('span', 'mark-dots');
-          types.slice(0, 4).forEach(ty => { const i = el('i'); i.dataset.type = ty || 'none'; dots.append(i); });
-          b.append(dots);
-        }
-        const left = list.filter(t => !t.done).length;
-        info = `, ${list.length} kegiatan, ${left} belum selesai` + (types.some(Boolean) ? ': ' + types.filter(Boolean).map(ty => TYPE_LABEL[ty]).join(', ') : '');
-      }
-      b.setAttribute('aria-label', d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) + (hol ? ', ' + b.title : '') + info);
-      b.onclick = () => { selected = k; renderTasks(); };
-      wk.append(b);
-    }
     $('#goToday').hidden = selected === tk;
   }
+  // Geser kalender: setelah berhenti di halaman kiri/kanan (atau atas/bawah), pindah minggu/bulan lalu kembali ke tengah
+  (() => {
+    const wk = $('#week'); let t;
+    const settle = () => {
+      if (wk._quiet) return;
+      const open = !!state.calOpen, pg = wk.children[1]; if (!pg) return;
+      const pos = open ? wk.scrollTop / pg.offsetHeight : wk.scrollLeft / pg.offsetWidth;
+      const i = Math.round(pos);
+      if (i === 1 || Math.abs(pos - i) > .05) return;
+      selected = open ? addMonths(selected, i - 1) : addDays(selected, (i - 1) * 7);
+      sfx.page(); haptic(); renderTasks();
+    };
+    wk.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(settle, 150); }, { passive: true });
+    if ('onscrollend' in window) wk.addEventListener('scrollend', () => { clearTimeout(t); settle(); });
+  })();
 
   function renderSummary(list) {
     const total = list.length, done = list.filter(t => t.done).length;
@@ -1153,12 +1190,13 @@
   $('#addTask').onsubmit = e => {
     e.preventDefault();
     const text = $('#taskText').value.trim();
-    if (!text) { $('#taskText').focus(); return; }
+    if (!text) { sfx.tap(); $('#taskText').focus(); return; }
     const name = ($('#nameInput').value.trim() || state.lastName || '').slice(0, 40);
     const task = { id: uid(), text, time: $('#taskTime').value || '', done: false, created: Date.now() };
     if (newType) task.type = newType;
     if (name) task.name = name;
     dayTasks(selected).push(task);
+    sfx.add(); haptic();
     state.lastName = name; $('#nameInput').value = '';
     save();
     $('#taskText').value = ''; $('#taskText').focus();
@@ -1369,19 +1407,17 @@
   function renderNamePick() {
     const names = knownNames(), cur = state.lastName || '';
     if (cur && !names.includes(cur)) names.unshift(cur);
-    if (!names.length) nameEdit = false;
-    buildPick($('#namePick'), names.map(n => [n, n]), nameEdit ? '' : cur, v => {
-      if (nameEdit) { deleteName(v); return; }
-      state.lastName = state.lastName === v ? '' : v; $('#nameInput').value = ''; save(); renderNamePick();
+    buildPick($('#namePick'), names.map(n => [n, n]), cur, () => {});
+    $('#namePick').querySelectorAll('.pri-btn').forEach((b, i) => {
+      const n = names[i]; b.dataset.name = n; paintPerson(b, n);
+      const x = el('span', 'nx', '✕'); x.setAttribute('aria-hidden', 'true'); b.append(x);
+      b.title = n + ' (ketuk ✕ untuk menghapus nama)';
+      b.onclick = e => {
+        if (e.target.closest('.nx')) { deleteName(n); return; }
+        state.lastName = state.lastName === n ? '' : n; $('#nameInput').value = ''; save(); renderNamePick();
+      };
     });
-    $('#namePick').querySelectorAll('.pri-btn').forEach((b, i) => { paintPerson(b, names[i]); if (nameEdit) b.title = 'Hapus nama ' + names[i]; });
-    $('#namePick').classList.toggle('editing', nameEdit);
-    $('#nameInput').hidden = nameEdit;
-    const del = $('#nameDelBtn'); del.hidden = !names.length; del.classList.toggle('on', nameEdit);
-    del.textContent = nameEdit ? 'Selesai' : 'Hapus nama';
   }
-  let nameEdit = false;
-  $('#nameDelBtn').onclick = () => { nameEdit = !nameEdit; renderNamePick(); if (nameEdit) toast('Ketuk nama yang ingin dihapus'); };
   function deleteName(n) {
     const tasks = Object.values(state.tasks).flat().filter(t => t.name === n), notes = state.notes.filter(x => x.name === n);
     if (!confirm(`Hapus nama "${n}"?\n\nNama ini dilepas dari ${tasks.length} kegiatan dan ${notes.length} catatan. Kegiatan dan catatannya tetap ada.`)) return;
@@ -1394,7 +1430,7 @@
   }
   $('#nameInput').oninput = e => {
     const v = e.target.value.trim();
-    $('#namePick').querySelectorAll('.pri-btn').forEach(b => b.setAttribute('aria-pressed', !v && b.textContent === (state.lastName || '')));
+    $('#namePick').querySelectorAll('.pri-btn').forEach(b => b.setAttribute('aria-pressed', !v && b.dataset.name === (state.lastName || '')));
   };
   $('#nameInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('#taskText').focus(); } };
   function renderAddPick() { ddLabel($('#typeBtn'), newType); }
