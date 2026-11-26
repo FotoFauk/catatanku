@@ -858,6 +858,7 @@
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast('Gagal menyimpan: penyimpanan browser penuh'); } queueNotifSync(); };
   let selected = todayKey();
   let viewStart = null; // hari pertama yang terlihat di kalender (tidak ikut berubah saat tanggal diketuk)
+  let calFollowSel = false; // true setelah tanggal diketuk: label bulan ikut tanggal itu sampai kalender digeser
 
   // ---------- Theme ----------
   // [id, nama, warna mode terang, warna mode gelap]
@@ -1034,7 +1035,7 @@
       info = `, ${list.length} kegiatan, ${left} belum selesai` + (types.some(Boolean) ? ': ' + types.filter(Boolean).map(ty => TYPE_LABEL[ty]).join(', ') : '');
     }
     b.setAttribute('aria-label', d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) + (hol ? ', ' + b.title : '') + info);
-    b.onclick = () => { selected = k; renderTasks(); };
+    b.onclick = () => { selected = k; calFollowSel = true; renderTasks(); };
     return b;
   }
 
@@ -1076,9 +1077,9 @@
   function updateCalView(idx) {
     const wk = $('#week'), open = !!state.calOpen, keys = wk._keys;
     const mid = keys[Math.min(keys.length - 1, idx + (open ? 2 * 7 + 3 : 3))];
-    const vm = mid.slice(0, 7);
+    const vm = calFollowSel ? selected.slice(0, 7) : mid.slice(0, 7);
     wk._month = vm;
-    $('#monthLabel').textContent = fromKey(mid).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    $('#monthLabel').textContent = fromKey(vm + '-01').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
     if (open) [...wk.children].forEach((c, i) => c.classList.toggle('out', keys[i].slice(0, 7) !== vm));
     const vis = keys.slice(idx, idx + (open ? 42 : 7)), tk = todayKey();
     $('#goToday').hidden = selected === tk && vis.includes(tk);
@@ -1093,7 +1094,7 @@
       if (open) { const ch = c[7].offsetTop - c[0].offsetTop; idx = Math.round(wk.scrollTop / ch) * 7; }
       else { const cw = c[1].offsetLeft - c[0].offsetLeft; idx = Math.round(wk.scrollLeft / cw); }
       const k = wk._keys[idx]; if (!k) return;
-      if (k !== viewStart) { viewStart = k; sfx.page(); haptic(); }
+      if (k !== viewStart) { viewStart = k; calFollowSel = false; sfx.page(); haptic(); }
       const len = wk._keys.length, edge = open ? 21 : 10, vis = open ? 42 : 7;
       if (idx < edge || idx > len - vis - edge) renderWeek(); else updateCalView(idx);
       lastIdx = idx;
@@ -1465,6 +1466,7 @@
   function renderAddPick() { ddLabel($('#typeBtn'), newType); }
   // Tombol ‹ ›: minggu = mundur/maju 7 hari, bulan = ke awal bulan sebelum/sesudahnya (tanggal terpilih tidak berubah)
   function shiftView(dir) {
+    calFollowSel = false;
     viewStart = state.calOpen ? weekStartKey(addMonths(($('#week')._month || selected.slice(0, 7)) + '-01', dir)) : addDays(viewStart, dir * 7);
     renderWeek();
   }
@@ -1472,7 +1474,7 @@
   $('#nextWeek').onclick = () => shiftView(1);
   $('#calToggle').onclick = () => {
     const wk = $('#week'), h0 = wk.offsetHeight;
-    state.calOpen = !state.calOpen; save();
+    state.calOpen = !state.calOpen; save(); calFollowSel = false;
     viewStart = state.calOpen ? weekStartKey(monthFirst(selected)) : weekStartKey(selected);
     renderWeek();
     const h1 = wk.offsetHeight;
@@ -1481,7 +1483,7 @@
     wk.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 320, easing: 'cubic-bezier(.3,.8,.3,1)' })
       .onfinish = () => { wk.style.overflow = ''; };
   };
-  $('#goToday').onclick = () => { selected = todayKey(); viewStart = state.calOpen ? weekStartKey(monthFirst(selected)) : weekStartKey(selected); renderTasks(); };
+  $('#goToday').onclick = () => { selected = todayKey(); calFollowSel = false; viewStart = state.calOpen ? weekStartKey(monthFirst(selected)) : weekStartKey(selected); renderTasks(); };
 
   function celebrate() {
     const list = state.tasks[selected] || [];
