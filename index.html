@@ -191,11 +191,11 @@
   .chip.sel .mark { background: #fff; color: var(--pri); box-shadow: 0 2px 6px -2px #0005; }
   .week.month .mark { width: 15px; height: 15px; }
   .week.month .mark svg { width: 8px; height: 8px; }
-  .legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 12px; font-weight: 600; color: var(--on-bg-muted); }
+  .legend { display: flex; justify-content: center; flex-wrap: nowrap; gap: 9px; margin-top: 12px; font-size: 11.5px; font-weight: 600; color: var(--on-bg-muted); white-space: nowrap; overflow: hidden; }
   .legend[hidden] { display: none; }
-  .legend span { display: flex; align-items: center; gap: 5px; }
-  .legend .mark { margin: 0; width: 15px; height: 15px; }
-  .legend .mark svg { width: 8px; height: 8px; }
+  .legend span { display: flex; align-items: center; gap: .35em; flex: none; }
+  .legend .mark { margin: 0; width: 1.25em; height: 1.25em; box-shadow: none; }
+  .legend .mark svg { width: .7em; height: .7em; }
 
   /* Prioritas */
   .pri-pick { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -1118,6 +1118,7 @@
     clearTimeout(wk._qt); wk._qt = setTimeout(() => { wk._quiet = false; }, 120);
     updateCalView(startIdx);
     $('#calLegend').hidden = !open;
+    if (open) requestAnimationFrame(fitLegend);
     $('#calToggle').setAttribute('aria-expanded', open);
     $('#calToggleText').textContent = open ? 'Tutup kalender' : 'Lihat sebulan';
     $('#prevWeek').setAttribute('aria-label', open ? 'Bulan sebelumnya' : 'Minggu sebelumnya');
@@ -1891,7 +1892,14 @@
     let fs = 12;
     while (p.scrollWidth > p.clientWidth && fs > 8.5) { fs -= .25; p.style.fontSize = fs + 'px'; }
   }
-  addEventListener('resize', fitRuleNote);
+  // Keterangan ikon di bawah kalender: kecilkan sampai muat satu baris
+  function fitLegend() {
+    const l = $('#calLegend'); if (!l || l.hidden) return;
+    let fs = 11.5; l.style.fontSize = fs + 'px';
+    const need = () => [...l.children].reduce((w, c) => w + c.offsetWidth, 0) + 9 * (l.children.length - 1);
+    while (need() > l.clientWidth && fs > 8) { fs -= .25; l.style.fontSize = fs + 'px'; }
+  }
+  addEventListener('resize', () => { fitRuleNote(); fitLegend(); });
   document.fonts && document.fonts.ready.then(fitRuleNote);
   applyTheme(); renderHeader(); setTab(state.tab); fitRuleNote(); renderAddPick(); renderNamePick(); renderFx(); renderNotif(); renderTasks(); renderNotes();
   if (state.notif) { swReg(); queueNotifSync(); notifyToday(); }
