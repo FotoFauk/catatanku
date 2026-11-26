@@ -267,6 +267,20 @@
   .who:hover { filter: brightness(.95); }
   .who.none { --nc: var(--muted); font-weight: 600; background: none; padding-left: 0; }
   .who.none:hover { text-decoration: underline; }
+  .type-menu {
+    position: absolute; z-index: 40; width: 196px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 14px; padding: 6px; box-shadow: var(--shadow); animation: drop .16s ease;
+  }
+  .type-menu[hidden] { display: none; }
+  .type-menu .tp-label { margin: 6px 8px; }
+  .tm-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 9px 10px;
+    border-radius: 9px; font-size: 14px; font-weight: 600; color: var(--ink); text-align: left;
+  }
+  .tm-item svg { color: var(--pri); flex: none; }
+  .tm-item:hover, .tm-item:focus-visible { background: var(--bg); outline: none; }
+  .tm-item.on { background: color-mix(in srgb, var(--pri) 14%, var(--surface)); }
+  .tm-item.on::after { content: "✓"; margin-left: auto; color: var(--pri); font-weight: 800; }
   .time-pick { position: relative; flex: none; display: flex; }
   .time-btn {
     display: flex; align-items: center; gap: 6px; border: 0; background: var(--bg); border-radius: 11px;
@@ -282,6 +296,23 @@
   }
   .time-pop[hidden] { display: none; }
   .tp-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 2px 2px 6px; }
+  .time-pop { width: 248px; }
+  .tp-heads { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 20px; }
+  .tp-wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 6px; height: 180px; margin: 4px 0 12px; }
+  .wheel {
+    position: relative; z-index: 1; height: 180px; width: 78px; overflow-y: auto; scroll-snap-type: y mandatory;
+    scrollbar-width: none; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent); mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent);
+  }
+  .wheel::-webkit-scrollbar { display: none; }
+  .wheel::before, .wheel::after { content: ""; display: block; height: 72px; }
+  .wheel button {
+    display: block; width: 100%; height: 36px; border: 0; background: none; scroll-snap-align: center;
+    font-size: 21px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; transition: color .15s, transform .15s;
+  }
+  .wheel button.on { color: var(--ink); transform: scale(1.08); }
+  .wheel-hl { position: absolute; left: 8px; right: 8px; top: 72px; height: 36px; border-radius: 10px; background: var(--accent-soft); z-index: 0; }
+  .tp-colon { position: relative; z-index: 1; font-size: 21px; font-weight: 800; color: var(--ink); }
   .tp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 10px; }
   .tp-grid.mins { grid-template-columns: repeat(4, 1fr); }
   .tp-grid button {
@@ -518,8 +549,13 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="timeLabel">Jam</span>
         </button>
         <div class="time-pop" id="timePop" role="dialog" aria-label="Pilih jam" hidden>
-          <p class="tp-label">Jam</p><div class="tp-grid" id="tpHours"></div>
-          <p class="tp-label">Menit</p><div class="tp-grid mins" id="tpMins"></div>
+          <div class="tp-heads"><span>Jam</span><span>Menit</span></div>
+          <div class="tp-wheels">
+            <div class="wheel-hl" aria-hidden="true"></div>
+            <div class="wheel" id="tpHours" role="listbox" aria-label="Jam"></div>
+            <span class="tp-colon">:</span>
+            <div class="wheel" id="tpMins" role="listbox" aria-label="Menit"></div>
+          </div>
           <div class="tp-foot"><button type="button" class="pill-btn" id="tpClear">Tanpa jam</button><button type="button" class="done-btn" id="tpOk">Oke</button></div>
         </div>
         <input type="hidden" id="taskTime">
@@ -945,13 +981,10 @@
         th.onclick = () => openPhoto(t); body.append(th);
       }
       const fl = el('button', 'act flag'); fl.innerHTML = ticon(typeOf(t), 17);
-      fl.title = `Jenis event: ${TYPE_LABEL[typeOf(t)] || 'belum dipilih'} (klik untuk ganti)`;
+      fl.title = `Jenis event: ${TYPE_LABEL[typeOf(t)] || 'belum dipilih'} (klik untuk memilih)`;
+      fl.setAttribute('aria-haspopup', 'menu');
       fl.setAttribute('aria-label', fl.title);
-      fl.onclick = () => {
-        const nx = TYPE_ORDER[(TYPE_ORDER.indexOf(typeOf(t)) + 1) % TYPE_ORDER.length];
-        if (nx) t.type = nx; else delete t.type;
-        save(); renderTasks(); toast('Jenis event: ' + (TYPE_LABEL[nx] || 'tidak ada'));
-      };
+      fl.onclick = e => { e.stopPropagation(); if (!typeMenu.hidden && typeTarget === t) closeTypeMenu(); else openTypeMenu(fl, t); };
       li.append(fl);
       if (isPast && !t.done) {
         const mv = el('button', 'act'); mv.innerHTML = ICON.move; mv.title = 'Pindahkan ke hari ini'; mv.setAttribute('aria-label', 'Pindahkan ke hari ini');
@@ -1069,31 +1102,76 @@
     photoDlg.close(); renderTasks(); toast('Foto dihapus, tugas belum selesai');
   };
   let newType = '', nameFilter = 'all';
+  // ---------- Menu pilih jenis event untuk jadwal yang sudah dibuat ----------
+  const typeMenu = el('div', 'type-menu'); typeMenu.hidden = true; typeMenu.setAttribute('role', 'menu');
+  document.body.append(typeMenu);
+  let typeTarget = null;
+  function openTypeMenu(btn, t) {
+    typeTarget = t;
+    typeMenu.replaceChildren(el('p', 'tp-label', 'Jenis event'), ...[...TYPES, ['', 'Tanpa jenis']].map(([v, label]) => {
+      const on = typeOf(t) === v, b = el('button', 'tm-item' + (on ? ' on' : ''));
+      b.type = 'button'; b.dataset.type = v || 'none'; b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', on);
+      b.innerHTML = ticon(v, 16); b.append(label);
+      b.onclick = () => {
+        if (v) t.type = v; else delete t.type;
+        save(); closeTypeMenu(); renderTasks(); toast('Jenis event: ' + label);
+      };
+      return b;
+    }));
+    typeMenu.hidden = false;
+    const r = btn.getBoundingClientRect(), w = typeMenu.offsetWidth, h = typeMenu.offsetHeight;
+    typeMenu.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + scrollX + 'px';
+    typeMenu.style.top = (r.bottom + 6 + h > innerHeight && r.top - h - 6 > 0 ? r.top - h - 6 : r.bottom + 6) + scrollY + 'px';
+    typeMenu.querySelector('.tm-item.on, .tm-item')?.focus();
+  }
+  function closeTypeMenu() { typeMenu.hidden = true; typeTarget = null; }
+  typeMenu.onclick = e => e.stopPropagation();
+  document.addEventListener('click', () => { if (!typeMenu.hidden) closeTypeMenu(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !typeMenu.hidden) closeTypeMenu(); });
   // ---------- Pemilih jam (menit kelipatan 15) ----------
   const timePop = $('#timePop');
   let tpH = '', tpM = '';
   function setTime(v) {
     $('#taskTime').value = v || '';
-    [tpH, tpM] = v ? v.split(':') : ['', ''];
+    if (v) [tpH, tpM] = v.split(':'); else tpH = tpM = '';
     $('#timeLabel').textContent = v || 'Jam';
     $('#timeBtn').classList.toggle('has', !!v);
     $('#timeBtn').setAttribute('aria-label', v ? 'Jam ' + v + ', klik untuk ubah' : 'Pilih jam (opsional)');
     renderTimePop();
   }
-  function renderTimePop() {
-    $('#tpHours').replaceChildren(...Array.from({ length: 24 }, (_, h) => {
-      const hh = pad(h), b = el('button', null, hh); b.type = 'button'; b.setAttribute('aria-pressed', hh === tpH);
-      b.onclick = () => setTime(hh + ':' + (tpM || '00')); return b;
+  // Roda geser: tinggi tiap baris 36px, baris tengah = pilihan
+  const HOURS = Array.from({ length: 24 }, (_, h) => pad(h)), MINS = ['00', '15', '30', '45'], ROW = 36;
+  function buildWheel(box, vals, onPick) {
+    box.replaceChildren(...vals.map((v, i) => {
+      const b = el('button', null, v); b.type = 'button'; b.setAttribute('role', 'option');
+      b.onclick = () => box.scrollTo({ top: i * ROW, behavior: 'smooth' });
+      return b;
     }));
-    $('#tpMins').replaceChildren(...['00', '15', '30', '45'].map(mm => {
-      const b = el('button', null, ':' + mm); b.type = 'button'; b.setAttribute('aria-pressed', mm === tpM);
-      b.onclick = () => setTime((tpH || pad(new Date().getHours())) + ':' + mm); return b;
-    }));
+    let t;
+    box.addEventListener('scroll', () => {
+      if (box._quiet) return;
+      clearTimeout(t);
+      t = setTimeout(() => onPick(vals[Math.max(0, Math.min(vals.length - 1, Math.round(box.scrollTop / ROW)))]), 90);
+    }, { passive: true });
   }
-  function openTime(v) { timePop.hidden = !v; $('#timeBtn').setAttribute('aria-expanded', v); }
+  function markWheel(box, vals, v) { [...box.children].forEach((b, i) => { b.classList.toggle('on', vals[i] === v); b.setAttribute('aria-selected', vals[i] === v); }); }
+  function scrollWheel(box, vals, v) { box._quiet = true; box.scrollTop = Math.max(0, vals.indexOf(v)) * ROW; setTimeout(() => { box._quiet = false; }, 160); }
+  function renderTimePop() { markWheel($('#tpHours'), HOURS, tpH); markWheel($('#tpMins'), MINS, tpM); }
+  buildWheel($('#tpHours'), HOURS, h => setTime(h + ':' + (tpM || '00')));
+  buildWheel($('#tpMins'), MINS, m => setTime((tpH || pad(new Date().getHours())) + ':' + m));
+  function openTime(v) {
+    timePop.hidden = !v; $('#timeBtn').setAttribute('aria-expanded', v);
+    if (!v) return;
+    if (!$('#taskTime').value) { // belum diisi: tampilkan jam sekarang, dibulatkan ke 15 menit berikutnya
+      const d = new Date(); d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
+      tpH = pad(d.getHours()); tpM = pad(d.getMinutes());
+    }
+    renderTimePop();
+    requestAnimationFrame(() => { scrollWheel($('#tpHours'), HOURS, tpH); scrollWheel($('#tpMins'), MINS, tpM); });
+  }
   $('#timeBtn').onclick = e => { e.stopPropagation(); openTime(timePop.hidden); };
   timePop.onclick = e => e.stopPropagation();
-  $('#tpOk').onclick = () => { openTime(false); $('#taskText').focus(); };
+  $('#tpOk').onclick = () => { setTime((tpH || '08') + ':' + (tpM || '00')); openTime(false); $('#taskText').focus(); };
   $('#tpClear').onclick = () => { setTime(''); openTime(false); };
   document.addEventListener('click', () => { if (!timePop.hidden) openTime(false); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !timePop.hidden) openTime(false); });
