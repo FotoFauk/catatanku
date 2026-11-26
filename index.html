@@ -24,7 +24,7 @@
     --c-blue: #d7e7ff; --c-purple: #e7ddff;
     --n-line: #0000000f; --shadow: 0 10px 30px -18px #3b2a1a55;
     --radius: 18px;
-    --t-sport: #e5484d; --t-agency: #7a5af0; --t-studio: #ef9a12; --t-project: #2f80ed;
+    --t-sport: #e5484d; --t-agency: #7a5af0; --t-studio: #ef9a12; --t-project: #2f80ed; --red: #d93636;
     --on-bg: var(--ink); --on-bg-muted: var(--muted);
     color-scheme: light;
   }
@@ -34,7 +34,7 @@
     --c-plain: #1f1d1a; --c-yellow: #3e3618; --c-pink: #432a2f; --c-mint: #1e3a2b;
     --c-blue: #1f3045; --c-purple: #322a48;
     --n-line: #ffffff12; --shadow: 0 10px 30px -18px #000;
-    --t-sport: #ff6369; --t-agency: #9d86ff; --t-studio: #ffb43d; --t-project: #5b9dff;
+    --t-sport: #ff6369; --t-agency: #9d86ff; --t-studio: #ffb43d; --t-project: #5b9dff; --red: #ff6b6b;
     color-scheme: dark;
   }
   [data-type="sport"]   { --pri: var(--t-sport); }
@@ -148,6 +148,26 @@
   .chip.sel .mark-dots { background: #fff; border-radius: 99px; padding: 0 4px; }
   .week.month .mark-dots { height: 15px; }
   .chip.today { border-color: var(--accent); }
+  .chip.red b, .chip.red small { color: var(--red); }
+  .chip.cuti b { color: color-mix(in srgb, var(--red) 62%, var(--muted)); }
+  .chip.sel.red b, .chip.sel.red small, .chip.sel.cuti b { color: #fff; }
+  .chip.hol::before { content: ""; position: absolute; left: 50%; bottom: 3px; width: 14px; height: 2px; margin-left: -7px; border-radius: 2px; background: var(--red); opacity: .8; }
+  .chip.sel.hol::before { background: #fff; }
+  .leg-red { font-style: normal; font-weight: 800; color: var(--red); }
+  .week .dow.red { color: var(--red); }
+  .holiday { font-size: 12.5px; font-weight: 700; color: var(--red); margin-top: 3px; }
+  .holiday[hidden] { display: none; }
+  .check, .act, .icon-btn { padding: 0; }
+  .check svg, .act svg { display: block; }
+  .dd-btn {
+    display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px;
+    padding: 6px 12px 6px 10px; font-size: 13px; font-weight: 700; color: var(--ink); transition: border-color .15s, background .15s;
+  }
+  .dd-btn .ic { color: var(--pri, var(--muted)); }
+  .dd-btn .chev { color: var(--muted); transition: transform .2s; }
+  .dd-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .dd-btn:not([data-type="none"]) { border-color: var(--pri); background: color-mix(in srgb, var(--pri) 12%, var(--surface)); }
+  .dlg .dd-btn { background: color-mix(in srgb, var(--surface) 55%, transparent); }
   .chip.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
   .chip.sel small { color: #ffffffcc; }
   .chip.sel .mark { background: #fff; color: var(--pri); box-shadow: 0 2px 6px -2px #0005; }
@@ -298,21 +318,21 @@
   .tp-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 2px 2px 6px; }
   .time-pop { width: 248px; }
   .tp-heads { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 20px; }
-  .tp-wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 6px; height: 180px; margin: 4px 0 12px; }
+  .tp-wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 4px; height: 200px; margin: 4px 0 12px; }
   .wheel {
-    position: relative; z-index: 1; height: 180px; width: 78px; overflow-y: auto; scroll-snap-type: y mandatory;
+    position: relative; z-index: 1; height: 200px; width: 86px; overflow-y: auto; scroll-snap-type: y mandatory;
     scrollbar-width: none; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     -webkit-mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent); mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent);
   }
   .wheel::-webkit-scrollbar { display: none; }
-  .wheel::before, .wheel::after { content: ""; display: block; height: 72px; }
+  .wheel::before, .wheel::after { content: ""; display: block; height: 80px; }
   .wheel button {
-    display: block; width: 100%; height: 36px; border: 0; background: none; scroll-snap-align: center;
-    font-size: 21px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; transition: color .15s, transform .15s;
+    display: block; width: 100%; height: 40px; border: 0; background: none; scroll-snap-align: center; scroll-snap-stop: always;
+    font-size: 25px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; transition: color .15s, transform .15s;
   }
-  .wheel button.on { color: var(--ink); transform: scale(1.08); }
-  .wheel-hl { position: absolute; left: 8px; right: 8px; top: 72px; height: 36px; border-radius: 10px; background: var(--accent-soft); z-index: 0; }
-  .tp-colon { position: relative; z-index: 1; font-size: 21px; font-weight: 800; color: var(--ink); }
+  .wheel button.on { color: var(--ink); font-weight: 600; transform: scale(1.06); }
+  .wheel-hl { position: absolute; left: 6px; right: 6px; top: 80px; height: 40px; border-radius: 10px; background: color-mix(in srgb, var(--ink) 8%, transparent); z-index: 0; }
+  .tp-colon { position: relative; z-index: 1; font-size: 25px; font-weight: 800; color: var(--ink); }
   .tp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 10px; }
   .tp-grid.mins { grid-template-columns: repeat(4, 1fr); }
   .tp-grid button {
@@ -487,6 +507,7 @@
           <label class="chip-btn" id="bgPhotoBtn" title="Pakai foto sebagai latar"><input type="file" id="bgPhoto" accept="image/*" class="vh" aria-label="Foto latar sendiri"><span>🖼️</span><span>Foto sendiri</span></label>
         </div>
         <hr>
+        <button role="menuitem" id="fxBtn"></button>
         <button role="menuitem" id="excelBtn">📊&nbsp; Ekspor ke Excel</button>
         <button role="menuitem" id="exportBtn">💾&nbsp; Unduh cadangan data</button>
         <button role="menuitem" id="importBtn">📂&nbsp; Pulihkan dari cadangan</button>
@@ -522,6 +543,7 @@
       <span><i class="mark" data-type="studio"></i>Studio</span>
       <span><i class="mark" data-type="project"></i>Project</span>
       <span><i class="mark done"></i>Semua selesai</span>
+      <span><i class="leg-red">17</i>Tanggal merah</span>
     </div>
     <button class="cal-toggle" id="calToggle" aria-expanded="false" aria-controls="week">
       <span id="calToggleText">Lihat sebulan</span>
@@ -536,13 +558,14 @@
       <div class="sum-text">
         <h3 id="dayTitle">Kegiatan hari ini</h3>
         <p id="dayInfo"></p>
+        <p class="holiday" id="dayHoliday" hidden></p>
       </div>
       <div class="mood" id="mood"><span class="mood-label">Mood</span></div>
     </div>
 
     <p class="rule-note">📷&nbsp; Setiap tugas baru bisa dicentang selesai setelah kamu mengirim foto bukti.</p>
     <div class="pri-pick" id="namePick" role="group" aria-label="Nama untuk kegiatan baru"><span class="lbl">Nama:</span><input type="text" class="name-input keep" id="nameInput" placeholder="+ Nama baru" maxlength="40" autocomplete="off" aria-label="Ketik nama baru"></div>
-    <div class="pri-pick" id="taskPri" role="group" aria-label="Jenis event kegiatan baru"><span class="lbl">Jenis event:</span></div>
+    <div class="pri-pick" id="taskPri"><span class="lbl">Jenis event:</span><button type="button" class="dd-btn" id="typeBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih jenis event"></button></div>
     <form class="add" id="addTask" autocomplete="off">
       <div class="time-pick">
         <button type="button" class="time-btn" id="timeBtn" aria-haspopup="dialog" aria-expanded="false" aria-label="Pilih jam (opsional)">
@@ -602,7 +625,7 @@
     <input type="text" id="noteTitle" placeholder="Judul" maxlength="120" aria-label="Judul catatan">
     <p class="dlg-meta" id="noteMeta"></p>
     <div class="pri-pick" id="noteName" role="group" aria-label="Nama pemilik catatan"><span class="lbl">Nama:</span><input type="text" class="name-input keep" id="noteNameInput" placeholder="+ Nama baru" maxlength="40" autocomplete="off" aria-label="Ketik nama baru untuk catatan"></div>
-    <div class="pri-pick" id="notePri" role="group" aria-label="Jenis event catatan"><span class="lbl">Jenis event:</span></div>
+    <div class="pri-pick" id="notePri"><span class="lbl">Jenis event:</span><button type="button" class="dd-btn" id="noteTypeBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih jenis event catatan"></button></div>
     <textarea id="noteBody" placeholder="Tulis sesuatu…" aria-label="Isi catatan"></textarea>
     <div class="dlg-foot">
       <div class="swatches" id="swatches"></div>
@@ -681,6 +704,43 @@
   const COLORS = ['plain', 'yellow', 'pink', 'mint', 'blue', 'purple'];
   const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
+  // ---------- Libur nasional & cuti bersama (SKB 3 Menteri 2026 & 2027; 2028 perkiraan) ----------
+  // L = libur nasional, C = cuti bersama, K = perkiraan (SKB 2028 belum terbit)
+  const HOLIDAYS = Object.fromEntries('2026-01-01|Tahun Baru 2026 Masehi|L\n2026-01-16|Isra Mikraj Nabi Muhammad SAW|L\n2026-02-16|Tahun Baru Imlek 2577 Kongzili|C\n2026-02-17|Tahun Baru Imlek 2577 Kongzili|L\n2026-03-18|Hari Suci Nyepi (Tahun Baru Saka 1948)|C\n2026-03-19|Hari Suci Nyepi (Tahun Baru Saka 1948)|L\n2026-03-20|Idulfitri 1447 H|C\n2026-03-21|Idulfitri 1447 H|L\n2026-03-22|Idulfitri 1447 H|L\n2026-03-23|Idulfitri 1447 H|C\n2026-03-24|Idulfitri 1447 H|C\n2026-04-03|Wafat Yesus Kristus|L\n2026-04-05|Kebangkitan Yesus Kristus (Paskah)|L\n2026-05-01|Hari Buruh Internasional|L\n2026-05-14|Kenaikan Yesus Kristus|L\n2026-05-15|Kenaikan Yesus Kristus|C\n2026-05-27|Iduladha 1447 H|L\n2026-05-28|Iduladha 1447 H|C\n2026-05-31|Hari Raya Waisak 2570 BE|L\n2026-06-01|Hari Lahir Pancasila|L\n2026-06-16|Tahun Baru Islam 1448 H|L\n2026-08-17|Proklamasi Kemerdekaan|L\n2026-08-25|Maulid Nabi Muhammad SAW|L\n2026-12-24|Kelahiran Yesus Kristus|C\n2026-12-25|Kelahiran Yesus Kristus|L\n2027-01-01|Tahun Baru 2027 Masehi|L\n2027-01-05|Isra Mikraj Nabi Muhammad SAW|L\n2027-02-05|Tahun Baru Imlek 2578 Kongzili|C\n2027-02-06|Tahun Baru Imlek 2578 Kongzili|L\n2027-03-08|Hari Suci Nyepi (Tahun Baru Saka 1949)|L\n2027-03-09|Idulfitri 1448 H|C\n2027-03-10|Idulfitri 1448 H|L\n2027-03-11|Idulfitri 1448 H|L\n2027-03-12|Idulfitri 1448 H|C\n2027-03-15|Idulfitri 1448 H|C\n2027-03-25|Wafat Yesus Kristus|C\n2027-03-26|Wafat Yesus Kristus|L\n2027-03-28|Kebangkitan Yesus Kristus (Paskah)|L\n2027-05-01|Hari Buruh Internasional|L\n2027-05-06|Kenaikan Yesus Kristus|L\n2027-05-17|Iduladha 1448 H|L\n2027-05-18|Iduladha 1448 H|C\n2027-05-19|Hari Raya Waisak 2571 BE|C\n2027-05-20|Hari Raya Waisak 2571 BE|L\n2027-06-01|Hari Lahir Pancasila|L\n2027-06-06|Tahun Baru Islam 1449 H|L\n2027-08-15|Maulid Nabi Muhammad SAW|L\n2027-08-17|Proklamasi Kemerdekaan|L\n2027-12-24|Kelahiran Yesus Kristus|C\n2027-12-25|Kelahiran Yesus Kristus|L\n2027-12-26|Isra Mikraj Nabi Muhammad SAW|L\n2028-01-01|Tahun Baru 2028 Masehi|K\n2028-01-26|Tahun Baru Imlek 2579 Kongzili|K\n2028-02-27|Idulfitri 1449 H|K\n2028-02-28|Idulfitri 1449 H|K\n2028-03-26|Hari Suci Nyepi (Tahun Baru Saka 1950)|K\n2028-04-14|Wafat Yesus Kristus|K\n2028-04-16|Kebangkitan Yesus Kristus (Paskah)|K\n2028-05-01|Hari Buruh Internasional|K\n2028-05-05|Iduladha 1449 H|K\n2028-05-09|Hari Raya Waisak 2572 BE|K\n2028-05-25|Kenaikan Yesus Kristus|K\n2028-05-26|Tahun Baru Islam 1450 H|K\n2028-06-01|Hari Lahir Pancasila|K\n2028-08-03|Maulid Nabi Muhammad SAW|K\n2028-08-17|Proklamasi Kemerdekaan|K\n2028-12-14|Isra Mikraj Nabi Muhammad SAW|K\n2028-12-25|Kelahiran Yesus Kristus|K'.split('\n').map(l => { const [d, n, k] = l.split('|'); return [d, { name: n, kind: k }]; }));
+
+  // ---------- Suara & getar ----------
+  const sfx = (() => {
+    let ctx;
+    const ac = () => { try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); } catch (e) { ctx = null; } return ctx; };
+    function blip(freq, dur, vol, type) {
+      if (!state.feedback) return;
+      const c = ac(); if (!c) return;
+      const o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+      o.type = type; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(freq * .55, t + dur);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + .02);
+    }
+    return { tick: () => blip(2400, .016, .045, 'square'), tap: () => blip(1100, .04, .07, 'triangle') };
+  })();
+  let hapticBusy = false;
+  function haptic() {
+    if (!state.feedback || hapticBusy) return;
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) {} return; }
+    try { // iPhone (Safari 18+): klik saklar tersembunyi memicu getaran halus
+      hapticBusy = true;
+      const l = document.createElement('label'), i = document.createElement('input');
+      i.type = 'checkbox'; i.setAttribute('switch', ''); l.setAttribute('aria-hidden', 'true'); l.style.display = 'none';
+      const stop = e => e.stopPropagation(); l.addEventListener('click', stop); i.addEventListener('click', stop);
+      l.append(i); document.head.append(l); l.click(); l.remove();
+    } catch (e) {} finally { hapticBusy = false; }
+  }
+  document.addEventListener('click', e => {
+    if (hapticBusy) return;
+    const b = e.target.closest && e.target.closest('button, .chip-btn, label.acc');
+    if (!b || b.closest('.wheel')) return;
+    sfx.tap(); haptic();
+  }, true);
+
   // ---------- State ----------
   function load() {
     try {
@@ -688,10 +748,10 @@
       if (s && typeof s === 'object') return {
         tasks: s.tasks || {}, moods: s.moods || {}, notes: s.notes || [], theme: s.theme || null,
         accent: s.accent || 'oranye', accentCustom: s.accentCustom || '#e3602f',
-        bg: s.bg || 'krem', bgCustom: s.bgCustom || '#f6f2ea', tab: s.tab || 'kegiatan', calOpen: !!s.calOpen, lastName: s.lastName || '', nameColors: s.nameColors || {}
+        bg: s.bg || 'krem', bgCustom: s.bgCustom || '#f6f2ea', tab: s.tab || 'kegiatan', calOpen: !!s.calOpen, feedback: s.feedback !== false, lastName: s.lastName || '', nameColors: s.nameColors || {}
       };
     } catch (e) {}
-    return { tasks: {}, moods: {}, notes: [], theme: null, accent: 'oranye', accentCustom: '#e3602f', bg: 'krem', bgCustom: '#f6f2ea', tab: 'kegiatan' };
+    return { tasks: {}, moods: {}, notes: [], theme: null, accent: 'oranye', accentCustom: '#e3602f', bg: 'krem', bgCustom: '#f6f2ea', tab: 'kegiatan', feedback: true };
   }
   let state = load();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast('Gagal menyimpan: penyimpanan browser penuh'); } };
@@ -848,13 +908,13 @@
     const tk = todayKey();
     let start, count;
     if (open) {
-      const first = new Date(sel.getFullYear(), sel.getMonth(), 1), lead = (first.getDay() + 6) % 7;
+      const first = new Date(sel.getFullYear(), sel.getMonth(), 1), lead = first.getDay();
       const dim = new Date(sel.getFullYear(), sel.getMonth() + 1, 0).getDate();
       start = new Date(first); start.setDate(1 - lead);
       count = Math.ceil((lead + dim) / 7) * 7;
-      ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].forEach(n => wk.append(el('span', 'dow', n)));
+      ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].forEach((n, i) => wk.append(el('span', 'dow' + (i ? '' : ' red'), n)));
     } else {
-      start = new Date(sel); start.setDate(sel.getDate() - ((sel.getDay() + 6) % 7));
+      start = new Date(sel); start.setDate(sel.getDate() - sel.getDay());
       count = 7;
     }
     $('#calLegend').hidden = !open;
@@ -865,7 +925,9 @@
     for (let i = 0; i < count; i++) {
       const d = new Date(start); d.setDate(start.getDate() + i);
       const k = keyOf(d), list = state.tasks[k] || [];
-      const b = el('button', 'chip' + (k === tk ? ' today' : '') + (k === selected ? ' sel' : '') + (open && d.getMonth() !== sel.getMonth() ? ' out' : ''));
+      const hol = HOLIDAYS[k], red = d.getDay() === 0 || (hol && hol.kind !== 'C');
+      const b = el('button', 'chip' + (k === tk ? ' today' : '') + (k === selected ? ' sel' : '') + (open && d.getMonth() !== sel.getMonth() ? ' out' : '') + (red ? ' red' : '') + (hol && hol.kind === 'C' ? ' cuti' : '') + (hol ? ' hol' : ''));
+      if (hol) b.title = (hol.kind === 'C' ? 'Cuti bersama: ' : 'Libur: ') + hol.name + (hol.kind === 'K' ? ' (perkiraan)' : '');
       if (!open) b.append(el('small', null, DAYS[d.getDay()]));
       b.append(el('b', null, d.getDate()));
       let info = '';
@@ -888,7 +950,7 @@
         const left = list.filter(t => !t.done).length;
         info = `, ${list.length} kegiatan, ${left} belum selesai` + (types.some(Boolean) ? ': ' + types.filter(Boolean).map(ty => TYPE_LABEL[ty]).join(', ') : '');
       }
-      b.setAttribute('aria-label', d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) + info);
+      b.setAttribute('aria-label', d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) + (hol ? ', ' + b.title : '') + info);
       b.onclick = () => { selected = k; renderTasks(); };
       wk.append(b);
     }
@@ -907,6 +969,9 @@
       : selected === addDays(tk, -1) ? 'Kegiatan kemarin'
       : fromKey(selected).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
     if (nameFilter !== 'all') $('#dayTitle').textContent += ' · ' + (nameFilter || 'Tanpa nama');
+    const hol = HOLIDAYS[selected], hp = $('#dayHoliday');
+    hp.hidden = !hol;
+    if (hol) hp.textContent = (hol.kind === 'C' ? '🗓️ Cuti bersama: ' : '🎌 Libur nasional: ') + hol.name + (hol.kind === 'K' ? ' (perkiraan, menunggu SKB resmi)' : '');
     $('#dayInfo').textContent = !total ? 'Belum ada yang direncanakan.'
       : done === total ? `Semua beres! ${total} kegiatan selesai 🎉`
       : `${done} dari ${total} selesai · ${total - done} lagi, semangat!`;
@@ -984,7 +1049,7 @@
       fl.title = `Jenis event: ${TYPE_LABEL[typeOf(t)] || 'belum dipilih'} (klik untuk memilih)`;
       fl.setAttribute('aria-haspopup', 'menu');
       fl.setAttribute('aria-label', fl.title);
-      fl.onclick = e => { e.stopPropagation(); if (!typeMenu.hidden && typeTarget === t) closeTypeMenu(); else openTypeMenu(fl, t); };
+      fl.onclick = e => { e.stopPropagation(); toggleTypeMenu(fl, typeOf(t), (v, label) => { if (v) t.type = v; else delete t.type; save(); renderTasks(); toast('Jenis event: ' + label); }, t); };
       li.append(fl);
       if (isPast && !t.done) {
         const mv = el('button', 'act'); mv.innerHTML = ICON.move; mv.title = 'Pindahkan ke hari ini'; mv.setAttribute('aria-label', 'Pindahkan ke hari ini');
@@ -1102,32 +1167,45 @@
     photoDlg.close(); renderTasks(); toast('Foto dihapus, tugas belum selesai');
   };
   let newType = '', nameFilter = 'all';
-  // ---------- Menu pilih jenis event untuk jadwal yang sudah dibuat ----------
+  // ---------- Menu drop-down jenis event (form, jadwal, catatan) ----------
   const typeMenu = el('div', 'type-menu'); typeMenu.hidden = true; typeMenu.setAttribute('role', 'menu');
   document.body.append(typeMenu);
-  let typeTarget = null;
-  function openTypeMenu(btn, t) {
-    typeTarget = t;
+  let typeTarget = null, typeBtnOpen = null;
+  function openTypeMenu(btn, cur, onPick, key) {
+    typeTarget = key; typeBtnOpen = btn;
     typeMenu.replaceChildren(el('p', 'tp-label', 'Jenis event'), ...[...TYPES, ['', 'Tanpa jenis']].map(([v, label]) => {
-      const on = typeOf(t) === v, b = el('button', 'tm-item' + (on ? ' on' : ''));
+      const on = cur === v, b = el('button', 'tm-item' + (on ? ' on' : ''));
       b.type = 'button'; b.dataset.type = v || 'none'; b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', on);
       b.innerHTML = ticon(v, 16); b.append(label);
-      b.onclick = () => {
-        if (v) t.type = v; else delete t.type;
-        save(); closeTypeMenu(); renderTasks(); toast('Jenis event: ' + label);
-      };
+      b.onclick = () => { closeTypeMenu(); onPick(v, label); };
       return b;
     }));
-    typeMenu.hidden = false;
+    const host = btn.closest('dialog') || document.body;
+    if (typeMenu.parentNode !== host) host.append(typeMenu);
+    typeMenu.hidden = false; btn.setAttribute('aria-expanded', 'true');
     const r = btn.getBoundingClientRect(), w = typeMenu.offsetWidth, h = typeMenu.offsetHeight;
-    typeMenu.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + scrollX + 'px';
-    typeMenu.style.top = (r.bottom + 6 + h > innerHeight && r.top - h - 6 > 0 ? r.top - h - 6 : r.bottom + 6) + scrollY + 'px';
-    typeMenu.querySelector('.tm-item.on, .tm-item')?.focus();
+    const inBody = host === document.body, hr = inBody ? { left: -scrollX, top: -scrollY } : host.getBoundingClientRect();
+    const sx = inBody ? 0 : host.scrollLeft, sy = inBody ? 0 : host.scrollTop;
+    const left = Math.max(8, Math.min(btn.classList.contains('dd-btn') ? r.left : r.right - w, innerWidth - w - 8));
+    // Drop-down selalu terbuka ke bawah tombol; kalau tidak muat, halaman digeser supaya menu terlihat
+    const top = r.bottom + 6;
+    typeMenu.style.left = left - hr.left + sx + 'px'; typeMenu.style.top = top - hr.top + sy + 'px';
+    const over = top + h + 12 - innerHeight;
+    if (over > 0) (inBody ? window : host).scrollBy({ top: over, behavior: 'smooth' });
+    typeMenu.querySelector('.tm-item.on, .tm-item')?.focus({ preventScroll: true });
   }
-  function closeTypeMenu() { typeMenu.hidden = true; typeTarget = null; }
+  function toggleTypeMenu(btn, cur, onPick, key) { if (!typeMenu.hidden && typeTarget === key) closeTypeMenu(); else openTypeMenu(btn, cur, onPick, key); }
+  function closeTypeMenu() { typeMenu.hidden = true; typeTarget = null; if (typeBtnOpen) typeBtnOpen.setAttribute('aria-expanded', 'false'); typeBtnOpen = null; }
+  function ddLabel(btn, v) {
+    btn.dataset.type = v || 'none';
+    btn.innerHTML = ticon(v, 15, 2.4).replace('<svg', '<svg class="ic"');
+    btn.append(el('span', null, TYPE_LABEL[v] || 'Pilih jenis'));
+    btn.insertAdjacentHTML('beforeend', '<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>');
+  }
   typeMenu.onclick = e => e.stopPropagation();
   document.addEventListener('click', () => { if (!typeMenu.hidden) closeTypeMenu(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !typeMenu.hidden) closeTypeMenu(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !typeMenu.hidden) { closeTypeMenu(); e.preventDefault(); } });
+  $('#typeBtn').onclick = e => { e.stopPropagation(); toggleTypeMenu($('#typeBtn'), newType, v => { newType = v; renderAddPick(); }, 'add'); };
   // ---------- Pemilih jam (menit kelipatan 15) ----------
   const timePop = $('#timePop');
   let tpH = '', tpM = '';
@@ -1139,24 +1217,37 @@
     $('#timeBtn').setAttribute('aria-label', v ? 'Jam ' + v + ', klik untuk ubah' : 'Pilih jam (opsional)');
     renderTimePop();
   }
-  // Roda geser: tinggi tiap baris 36px, baris tengah = pilihan
-  const HOURS = Array.from({ length: 24 }, (_, h) => pad(h)), MINS = ['00', '15', '30', '45'], ROW = 36;
+  // Roda geser ala alarm iPhone: berputar terus (loop), bunyi "tik" + getar tiap angka lewat
+  const HOURS = Array.from({ length: 24 }, (_, h) => pad(h)), MINS = ['00', '15', '30', '45'], ROW = 40, LOOP = 9;
   function buildWheel(box, vals, onPick) {
-    box.replaceChildren(...vals.map((v, i) => {
-      const b = el('button', null, v); b.type = 'button'; b.setAttribute('role', 'option');
+    const n = vals.length, mid0 = Math.floor(LOOP / 2) * n;
+    box.replaceChildren(...Array.from({ length: n * LOOP }, (_, i) => {
+      const b = el('button', null, vals[i % n]); b.type = 'button'; b.tabIndex = -1; b.setAttribute('role', 'option');
       b.onclick = () => box.scrollTo({ top: i * ROW, behavior: 'smooth' });
       return b;
     }));
-    let t;
+    let t, last = -1;
     box.addEventListener('scroll', () => {
+      const i = Math.round(box.scrollTop / ROW);
+      if (i !== last) {
+        if (last >= 0) box.children[last]?.classList.remove('on');
+        box.children[i]?.classList.add('on'); last = i;
+        if (!box._quiet) { sfx.tick(); haptic(); }
+      }
       if (box._quiet) return;
       clearTimeout(t);
-      t = setTimeout(() => onPick(vals[Math.max(0, Math.min(vals.length - 1, Math.round(box.scrollTop / ROW)))]), 90);
+      t = setTimeout(() => {
+        const idx = Math.round(box.scrollTop / ROW), k = ((idx % n) + n) % n, mid = mid0 + k;
+        if (Math.abs(idx - mid) >= n) { box._quiet = true; box.scrollTop = mid * ROW; setTimeout(() => { box._quiet = false; }, 80); }
+        onPick(vals[k]);
+      }, 120);
     }, { passive: true });
   }
-  function markWheel(box, vals, v) { [...box.children].forEach((b, i) => { b.classList.toggle('on', vals[i] === v); b.setAttribute('aria-selected', vals[i] === v); }); }
-  function scrollWheel(box, vals, v) { box._quiet = true; box.scrollTop = Math.max(0, vals.indexOf(v)) * ROW; setTimeout(() => { box._quiet = false; }, 160); }
-  function renderTimePop() { markWheel($('#tpHours'), HOURS, tpH); markWheel($('#tpMins'), MINS, tpM); }
+  function scrollWheel(box, vals, v) {
+    const i = Math.floor(LOOP / 2) * vals.length + Math.max(0, vals.indexOf(v));
+    box._quiet = true; box.scrollTop = i * ROW; setTimeout(() => { box._quiet = false; }, 160);
+  }
+  function renderTimePop() {}
   buildWheel($('#tpHours'), HOURS, h => setTime(h + ':' + (tpM || '00')));
   buildWheel($('#tpMins'), MINS, m => setTime((tpH || pad(new Date().getHours())) + ':' + m));
   function openTime(v) {
@@ -1212,7 +1303,7 @@
     $('#namePick').querySelectorAll('.pri-btn').forEach(b => b.setAttribute('aria-pressed', !v && b.textContent === (state.lastName || '')));
   };
   $('#nameInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('#taskText').focus(); } };
-  function renderAddPick() { buildPick($('#taskPri'), TYPES, newType, v => { newType = newType === v ? '' : v; renderAddPick(); }); }
+  function renderAddPick() { ddLabel($('#typeBtn'), newType); }
   $('#prevWeek').onclick = () => { selected = state.calOpen ? addMonths(selected, -1) : addDays(selected, -7); renderTasks(); };
   $('#nextWeek').onclick = () => { selected = state.calOpen ? addMonths(selected, 1) : addDays(selected, 7); renderTasks(); };
   $('#calToggle').onclick = () => {
@@ -1293,7 +1384,7 @@
     $('#pinBtn').classList.toggle('on', !!current.pinned);
     $('#pinBtn').setAttribute('aria-pressed', !!current.pinned);
     $('#noteMeta').textContent = 'Diubah ' + fmtTime(current.updated);
-    buildPick($('#notePri'), TYPES, typeOf(current), v => { if (current.type === v) delete current.type; else current.type = v; touch(); syncDialog(); });
+    ddLabel($('#noteTypeBtn'), typeOf(current));
     const names = knownNames(), cur = current.name || '';
     if (cur && !names.includes(cur)) names.unshift(cur);
     buildPick($('#noteName'), names.map(n => [n, n]), cur, v => {
@@ -1329,7 +1420,12 @@
     state.notes.splice(idx, 1); current = null; save(); dlg.close(); renderNotes();
     if (n.title.trim() || n.body.trim()) toast('Catatan dihapus', () => { state.notes.splice(idx, 0, n); save(); renderNotes(); });
   };
+  $('#noteTypeBtn').onclick = e => {
+    e.stopPropagation();
+    toggleTypeMenu($('#noteTypeBtn'), typeOf(current), v => { if (v) current.type = v; else delete current.type; touch(); syncDialog(); }, 'note');
+  };
   dlg.addEventListener('close', () => {
+    closeTypeMenu();
     if (current && !current.title.trim() && !current.body.trim()) {
       state.notes.splice(state.notes.indexOf(current), 1); save();
     }
@@ -1452,6 +1548,8 @@
     ];
     return { blob: makeZip(files), tasks: taskRows.length, notes: noteRows.length };
   }
+  function renderFx() { $('#fxBtn').textContent = (state.feedback ? '🔊' : '🔇') + '\u00a0 Suara & getar: ' + (state.feedback ? 'Aktif' : 'Mati'); }
+  $('#fxBtn').onclick = e => { e.stopPropagation(); state.feedback = !state.feedback; save(); renderFx(); if (state.feedback) { sfx.tap(); haptic(); } };
   $('#excelBtn').onclick = () => {
     const { blob, tasks, notes } = exportExcel();
     const a = el('a'); a.href = URL.createObjectURL(blob); a.download = `catatanku-${todayKey()}.xlsx`;
@@ -1475,7 +1573,7 @@
   // ---------- Init ----------
   document.querySelectorAll('#calLegend .mark').forEach(m => { m.innerHTML = m.classList.contains('done') ? checkSm(8) : ticon(m.dataset.type, 9, 2.6); });
   setTime('');
-  applyTheme(); renderHeader(); setTab(state.tab); renderAddPick(); renderNamePick(); renderTasks(); renderNotes();
+  applyTheme(); renderHeader(); setTab(state.tab); renderAddPick(); renderNamePick(); renderFx(); renderTasks(); renderNotes();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (!state.theme) applyTheme(); });
   // Perbarui sapaan & pindah hari otomatis saat tengah malam
   let lastDay = todayKey();
