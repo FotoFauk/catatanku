@@ -290,7 +290,7 @@
     background: var(--accent-soft); border-radius: 99px; padding: 3px 10px; font-size: 12px; font-weight: 700; white-space: nowrap;
   }
   .need-photo:hover { border-style: solid; }
-  #namePick { margin: 0 0 8px; }
+  #namePick { margin: 18px 0 8px; }
   #namePick .lbl, #taskPri .lbl, #noteName .lbl, #notePri .lbl { min-width: 82px; }
   #nameBtn, #typeBtn, #noteNameBtn, #noteTypeBtn {
     width: 200px; max-width: calc(100% - 92px); justify-content: flex-start; padding: 10px 14px 10px 12px; font-size: 14px;
@@ -398,7 +398,7 @@
     font: inherit; font-size: 14px; font-weight: 600; background: var(--surface); color: var(--ink); outline: none; text-align: center;
   }
   .dd-btn.person { border-color: var(--pri); background: color-mix(in srgb, var(--pri) 12%, var(--surface)); }
-  .rule-note { font-size: 12.5px; font-weight: 500; color: var(--on-bg-muted); margin: 18px 0 12px; }
+  .rule-note { font-size: 12px; font-weight: 500; color: var(--on-bg-muted); margin: -6px 0 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
   .check.cam { border: 2px dashed var(--accent); color: var(--accent); }
   .check.cam:hover { background: var(--accent-soft); }
   .task.done .check.cam { border-style: solid; }
@@ -510,7 +510,7 @@
   .toast button { border: 0; background: var(--accent); color: #fff; border-radius: 9px; padding: 6px 12px; font-weight: 700; font-size: 13px; }
   .toast button[hidden] { display: none; }
 
-  footer { text-align: center; color: var(--on-bg-muted); font-size: 12px; font-weight: 300; letter-spacing: .5em; text-indent: .5em; text-transform: lowercase; margin-top: 44px; opacity: .85; }
+  footer { text-align: center; color: var(--on-bg-muted); font-size: 12px; font-weight: 300; letter-spacing: .85em; text-indent: .85em; text-transform: lowercase; margin-top: 46px; opacity: .85; }
 
   @keyframes fade { from { opacity: 0; } }
   @keyframes slide { from { opacity: 0; transform: translateY(6px); } }
@@ -608,7 +608,6 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
     </button>
 
-    <p class="rule-note">📷&nbsp; Setiap tugas baru bisa dicentang selesai setelah kamu mengirim foto bukti.</p>
     <div class="pri-pick" id="namePick"><span class="lbl">Nama:</span><button type="button" class="dd-btn" id="nameBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih nama"></button></div>
     <div class="pri-pick" id="taskPri"><span class="lbl">Jenis event:</span><button type="button" class="dd-btn" id="typeBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih jenis event"></button></div>
     <form class="add" id="addTask" autocomplete="off">
@@ -642,6 +641,7 @@
         <p class="holiday" id="dayHoliday" hidden></p>
       </div>
     </div>
+    <p class="rule-note">📷&nbsp; Setiap tugas baru bisa dicentang selesai setelah kamu mengirim foto bukti.</p>
     <input type="file" id="taskPhoto" accept="image/*" capture="environment" hidden>
 
     <div class="pri-pick" id="nameFilter" role="group" aria-label="Tampilkan kegiatan milik" hidden><span class="lbl">Tampilkan:</span></div>
@@ -673,7 +673,7 @@
     </div>
   </section>
 
-  <footer>moment with us</footer>
+  <footer>#moment with us</footer>
 </div>
 
 <dialog id="noteDialog">
@@ -1033,6 +1033,7 @@
     state.tab = t; save();
     document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + t));
+    if (t === 'kegiatan' && typeof fitRuleNote === 'function') requestAnimationFrame(() => fitRuleNote());
   }
   document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
     if (state.tab !== b.dataset.tab) sfx.swap(b.dataset.tab === 'catatan'); else sfx.tap();
@@ -1884,7 +1885,15 @@
   // ---------- Init ----------
   document.querySelectorAll('#calLegend .mark').forEach(m => { m.innerHTML = m.classList.contains('done') ? checkSm(8) : ticon(m.dataset.type, 9, 2.6); });
   setTime('');
-  applyTheme(); renderHeader(); setTab(state.tab); renderAddPick(); renderNamePick(); renderFx(); renderNotif(); renderTasks(); renderNotes();
+  function fitRuleNote() {
+    const p = $('.rule-note'); if (!p) return;
+    p.style.fontSize = '12px';
+    let fs = 12;
+    while (p.scrollWidth > p.clientWidth && fs > 8.5) { fs -= .25; p.style.fontSize = fs + 'px'; }
+  }
+  addEventListener('resize', fitRuleNote);
+  document.fonts && document.fonts.ready.then(fitRuleNote);
+  applyTheme(); renderHeader(); setTab(state.tab); fitRuleNote(); renderAddPick(); renderNamePick(); renderFx(); renderNotif(); renderTasks(); renderNotes();
   if (state.notif) { swReg(); queueNotifSync(); notifyToday(); }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') notifyToday(); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (!state.theme) applyTheme(); });
