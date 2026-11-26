@@ -229,9 +229,11 @@
   .chip.out { opacity: .35; }
   .chip.out.sel { opacity: 1; }
   .cal-toggle {
-    display: flex; align-items: center; gap: 6px; margin: 8px auto 0; border: 0; background: none;
-    color: var(--on-bg-muted); font-weight: 600; font-size: 13px; padding: 6px 14px; border-radius: 99px; transition: background .2s, color .2s;
+    display: flex; align-items: center; gap: 8px; margin: 12px auto 0; border: 1px solid var(--line); background: var(--surface);
+    color: var(--ink); font-weight: 700; font-size: 15px; padding: 10px 22px; border-radius: 99px; transition: background .2s, color .2s, border-color .2s;
+    box-shadow: 0 4px 14px -10px #0006;
   }
+  .cal-toggle svg { width: 17px; height: 17px; }
   .cal-toggle:hover { background: var(--surface); color: var(--ink); }
   .cal-toggle svg { transition: transform .3s; }
   .cal-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
@@ -368,6 +370,26 @@
     font-size: 9px; font-weight: 900; color: var(--muted); background: color-mix(in srgb, var(--ink) 8%, transparent); transition: background .15s, color .15s;
   }
   .pri-btn .nx:hover { background: var(--red); color: #fff; }
+  .name-menu { width: 230px; }
+  .nm-item .nm-dot, .dd-btn .nm-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--pri); flex: none; }
+  .nm-item .nm-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nm-item.on::after { content: none; }
+  .nm-item .nx {
+    display: grid; place-items: center; width: 24px; height: 24px; margin-left: auto; border-radius: 50%; flex: none;
+    font-size: 10px; font-weight: 900; color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent);
+  }
+  .nm-item .nx:hover { background: var(--red); color: #fff; }
+  .nm-ico { width: 16px; text-align: center; font-size: 13px; flex: none; }
+  .nm-add {
+    display: flex; align-items: center; justify-content: center; width: 100%; height: 40px; margin-top: 6px;
+    border: 1.5px dashed var(--line); border-radius: 10px; background: none; color: var(--accent);
+  }
+  .nm-add:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .nm-input {
+    width: 100%; height: 40px; margin-top: 6px; border: 1.5px solid var(--accent); border-radius: 10px; padding: 0 12px;
+    font: inherit; font-size: 14px; font-weight: 600; background: var(--surface); color: var(--ink); outline: none; text-align: center;
+  }
+  .dd-btn.person { border-color: var(--pri); background: color-mix(in srgb, var(--pri) 12%, var(--surface)); }
   .rule-note { font-size: 12.5px; font-weight: 500; color: var(--on-bg-muted); margin: -4px 0 12px; }
   .check.cam { border: 2px dashed var(--accent); color: var(--accent); }
   .check.cam:hover { background: var(--accent-soft); }
@@ -591,7 +613,7 @@
     </div>
 
     <p class="rule-note">📷&nbsp; Setiap tugas baru bisa dicentang selesai setelah kamu mengirim foto bukti.</p>
-    <div class="pri-pick" id="namePick" role="group" aria-label="Nama untuk kegiatan baru"><span class="lbl">Nama:</span><input type="text" class="name-input keep" id="nameInput" placeholder="+ Nama baru" maxlength="40" autocomplete="off" aria-label="Ketik nama baru"></div>
+    <div class="pri-pick" id="namePick"><span class="lbl">Nama:</span><button type="button" class="dd-btn" id="nameBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih nama"></button></div>
     <div class="pri-pick" id="taskPri"><span class="lbl">Jenis event:</span><button type="button" class="dd-btn" id="typeBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih jenis event"></button></div>
     <form class="add" id="addTask" autocomplete="off">
       <div class="time-pick">
@@ -651,7 +673,7 @@
   <form class="dlg" method="dialog">
     <input type="text" id="noteTitle" placeholder="Judul" maxlength="120" aria-label="Judul catatan">
     <p class="dlg-meta" id="noteMeta"></p>
-    <div class="pri-pick" id="noteName" role="group" aria-label="Nama pemilik catatan"><span class="lbl">Nama:</span><input type="text" class="name-input keep" id="noteNameInput" placeholder="+ Nama baru" maxlength="40" autocomplete="off" aria-label="Ketik nama baru untuk catatan"></div>
+    <div class="pri-pick" id="noteName"><span class="lbl">Nama:</span><button type="button" class="dd-btn" id="noteNameBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih nama pemilik catatan"></button></div>
     <div class="pri-pick" id="notePri"><span class="lbl">Jenis event:</span><button type="button" class="dd-btn" id="noteTypeBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Pilih jenis event catatan"></button></div>
     <textarea id="noteBody" placeholder="Tulis sesuatu…" aria-label="Isi catatan"></textarea>
     <div class="dlg-foot">
@@ -774,6 +796,15 @@
       tick: () => blip(2400, .016, .045, 'square'), tap: () => blip(1100, .04, .07, 'triangle'), swap,
       done: () => chord([1047, 1319, 1568], .07, .18, .08),            // satu kegiatan selesai
       allDone: () => chord([784, 988, 1175, 1568, 1976], .085, .2, .075), // semua kegiatan hari itu selesai
+      wheel: () => { // klik mekanis pendek seperti roda alarm iPhone
+        if (!state.feedback) return;
+        const c = ac(); if (!c) return;
+        const len = Math.floor(c.sampleRate * .012), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 6);
+        const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+        src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 1.4; g.gain.value = .55;
+        src.connect(bp).connect(g).connect(c.destination); src.start();
+      },
       add: () => chord([523, 1047], .06, .13, .09),                      // jadwal baru ditambahkan ("plop-ting")
       page: () => chord([440], 0, .07, .05)                              // kalender digeser
     };
@@ -849,7 +880,7 @@
       if (s && typeof s === 'object') return {
         tasks: s.tasks || {}, moods: s.moods || {}, notes: s.notes || [], theme: s.theme || null,
         accent: s.accent || 'oranye', accentCustom: s.accentCustom || '#e3602f',
-        bg: s.bg || 'krem', bgCustom: s.bgCustom || '#f6f2ea', tab: s.tab || 'kegiatan', calOpen: !!s.calOpen, feedback: s.feedback !== false, notif: !!s.notif, lastName: s.lastName || '', nameColors: s.nameColors || {}
+        bg: s.bg || 'krem', bgCustom: s.bgCustom || '#f6f2ea', tab: s.tab || 'kegiatan', calOpen: !!s.calOpen, feedback: s.feedback !== false, notif: !!s.notif, lastName: s.lastName || '', nameColors: s.nameColors || {}, hiddenNames: s.hiddenNames || []
       };
     } catch (e) {}
     return { tasks: {}, moods: {}, notes: [], theme: null, accent: 'oranye', accentCustom: '#e3602f', bg: 'krem', bgCustom: '#f6f2ea', tab: 'kegiatan', feedback: true };
@@ -1221,13 +1252,13 @@
     e.preventDefault();
     const text = $('#taskText').value.trim();
     if (!text) { sfx.tap(); $('#taskText').focus(); return; }
-    const name = ($('#nameInput').value.trim() || state.lastName || '').slice(0, 40);
+    const name = (state.lastName || '').slice(0, 40);
     const task = { id: uid(), text, time: $('#taskTime').value || '', done: false, created: Date.now() };
     if (newType) task.type = newType;
     if (name) task.name = name;
     dayTasks(selected).push(task);
     sfx.add(); haptic();
-    state.lastName = name; $('#nameInput').value = '';
+    state.lastName = name;
     save();
     $('#taskText').value = ''; $('#taskText').focus();
     setTime(''); renderNamePick();
@@ -1316,6 +1347,7 @@
   document.body.append(typeMenu);
   let typeTarget = null, typeBtnOpen = null;
   function openTypeMenu(btn, cur, onPick, key) {
+    closeNameMenu();
     typeTarget = key; typeBtnOpen = btn;
     typeMenu.replaceChildren(el('p', 'tp-label', 'Jenis event'), ...[...TYPES, ['', 'Tanpa jenis']].map(([v, label]) => {
       const on = cur === v, b = el('button', 'tm-item' + (on ? ' on' : ''));
@@ -1376,7 +1408,7 @@
       if (i !== last) {
         if (last >= 0) box.children[last]?.classList.remove('on');
         box.children[i]?.classList.add('on'); last = i;
-        if (!box._quiet) { sfx.tick(); haptic(); }
+        if (!box._quiet) { sfx.wheel(); haptic(); }
       }
       if (box._quiet) return;
       clearTimeout(t);
@@ -1432,37 +1464,79 @@
     const seen = new Map();
     Object.values(state.tasks).flat().forEach(t => { if (t.name && (seen.get(t.name) || 0) < t.created) seen.set(t.name, t.created); });
     state.notes.forEach(n => { if (n.name && (seen.get(n.name) || 0) < n.updated) seen.set(n.name, n.updated); });
-    return [...seen.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(e => e[0]);
+    const hidden = new Set(state.hiddenNames || []);
+    return [...seen.entries()].filter(e => !hidden.has(e[0])).sort((a, b) => b[1] - a[1]).slice(0, 20).map(e => e[0]);
   }
-  function renderNamePick() {
-    const names = knownNames(), cur = state.lastName || '';
-    if (cur && !names.includes(cur)) names.unshift(cur);
-    buildPick($('#namePick'), names.map(n => [n, n]), cur, () => {});
-    $('#namePick').querySelectorAll('.pri-btn').forEach((b, i) => {
-      const n = names[i]; b.dataset.name = n; paintPerson(b, n);
-      const x = el('span', 'nx', '✕'); x.setAttribute('aria-hidden', 'true'); b.append(x);
-      b.title = n + ' (ketuk ✕ untuk menghapus nama)';
-      b.onclick = e => {
-        if (e.target.closest('.nx')) { deleteName(n); return; }
-        state.lastName = state.lastName === n ? '' : n; $('#nameInput').value = ''; save(); renderNamePick();
-      };
+  // Tombol drop-down nama: titik warna + nama, atau "Pilih nama"
+  function ddName(btn, n) {
+    btn.classList.toggle('person', !!n);
+    if (n) btn.style.setProperty('--pri', colorOf(n)); else btn.style.removeProperty('--pri');
+    btn.replaceChildren();
+    if (n) btn.append(el('i', 'nm-dot'), el('span', null, n)); else btn.append(el('span', 'nm-ico', '👤'), el('span', null, 'Pilih nama'));
+    btn.insertAdjacentHTML('beforeend', '<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>');
+  }
+  function renderNamePick() { ddName($('#nameBtn'), state.lastName || ''); }
+  const nameMenu = el('div', 'type-menu name-menu'); nameMenu.hidden = true; nameMenu.setAttribute('role', 'menu');
+  document.body.append(nameMenu);
+  let nameKey = null, nameBtnOpen = null;
+  function closeNameMenu() { nameMenu.hidden = true; nameKey = null; if (nameBtnOpen) nameBtnOpen.setAttribute('aria-expanded', 'false'); nameBtnOpen = null; }
+  function openNameMenu(btn, cur, onPick, key) {
+    closeTypeMenu();
+    nameKey = key; nameBtnOpen = btn;
+    const names = knownNames(); if (cur && !names.includes(cur)) names.unshift(cur);
+    const items = names.map(n => {
+      const on = n === cur, b = el('button', 'tm-item nm-item' + (on ? ' on' : ''));
+      b.type = 'button'; b.style.setProperty('--pri', colorOf(n)); b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', on);
+      b.append(el('i', 'nm-dot'), el('span', 'nm-name', n));
+      // ✕ hanya muncul (dan bisa ditekan) pada nama yang sedang dipilih
+      if (on) { const x = el('span', 'nx', '✕'); x.title = 'Hapus nama dari daftar'; x.setAttribute('aria-label', 'Hapus nama ' + n + ' dari daftar'); b.append(x); }
+      b.onclick = e => { if (on && e.target.closest('.nx')) { closeNameMenu(); deleteName(n); return; } closeNameMenu(); onPick(n); };
+      return b;
     });
+    const none = el('button', 'tm-item' + (cur ? '' : ' on')); none.type = 'button'; none.dataset.type = 'none';
+    none.append(el('span', 'nm-ico', '👤'), 'Tanpa nama'); none.onclick = () => { closeNameMenu(); onPick(''); };
+    const add = el('button', 'nm-add'); add.type = 'button'; add.title = 'Tambah nama baru'; add.setAttribute('aria-label', 'Tambah nama baru');
+    add.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    add.onclick = () => {
+      const inp = el('input', 'nm-input'); inp.type = 'text'; inp.placeholder = 'Ketik nama, lalu Enter'; inp.maxLength = 40; inp.setAttribute('aria-label', 'Nama baru');
+      add.replaceWith(inp); inp.focus();
+      inp.onkeydown = e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const v = inp.value.trim().slice(0, 40); if (!v) return;
+          state.hiddenNames = (state.hiddenNames || []).filter(x => x !== v);
+          closeNameMenu(); onPick(v); sfx.add();
+        }
+        if (e.key === 'Escape') closeNameMenu();
+      };
+    };
+    nameMenu.replaceChildren(el('p', 'tp-label', 'Nama'), ...items, none, add);
+    const host = btn.closest('dialog') || document.body;
+    if (nameMenu.parentNode !== host) host.append(nameMenu);
+    nameMenu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    const r = btn.getBoundingClientRect(), w = nameMenu.offsetWidth, h = nameMenu.offsetHeight;
+    const inBody = host === document.body, hr = inBody ? { left: -scrollX, top: -scrollY } : host.getBoundingClientRect();
+    const sx = inBody ? 0 : host.scrollLeft, sy = inBody ? 0 : host.scrollTop;
+    const left = Math.max(8, Math.min(r.left, innerWidth - w - 8)), top = r.bottom + 6;
+    nameMenu.style.left = left - hr.left + sx + 'px'; nameMenu.style.top = top - hr.top + sy + 'px';
+    const over = top + h + 12 - innerHeight;
+    if (over > 0) (inBody ? window : host).scrollBy({ top: over, behavior: 'smooth' });
   }
-  function deleteName(n) {
-    const tasks = Object.values(state.tasks).flat().filter(t => t.name === n), notes = state.notes.filter(x => x.name === n);
-    if (!confirm(`Hapus nama "${n}"?\n\nNama ini dilepas dari ${tasks.length} kegiatan dan ${notes.length} catatan. Kegiatan dan catatannya tetap ada.`)) return;
-    tasks.forEach(t => delete t.name); notes.forEach(x => delete x.name);
-    if (state.lastName === n) state.lastName = '';
-    if (state.nameColors) delete state.nameColors[n];
-    if (nameFilter === n) nameFilter = 'all';
-    if (noteNameFilter === n) noteNameFilter = 'all';
-    save(); renderNamePick(); renderTasks(); renderNotes(); toast(`Nama "${n}" dihapus`);
-  }
-  $('#nameInput').oninput = e => {
-    const v = e.target.value.trim();
-    $('#namePick').querySelectorAll('.pri-btn').forEach(b => b.setAttribute('aria-pressed', !v && b.dataset.name === (state.lastName || '')));
+  nameMenu.onclick = e => e.stopPropagation();
+  document.addEventListener('click', () => { if (!nameMenu.hidden) closeNameMenu(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !nameMenu.hidden) { closeNameMenu(); e.preventDefault(); } });
+  $('#nameBtn').onclick = e => {
+    e.stopPropagation();
+    if (!nameMenu.hidden && nameKey === 'add') { closeNameMenu(); return; }
+    openNameMenu($('#nameBtn'), state.lastName || '', v => { state.lastName = v; save(); renderNamePick(); }, 'add');
   };
-  $('#nameInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('#taskText').focus(); } };
+  // Hapus nama dari daftar saja: kegiatan & catatan yang memakai nama ini tetap tersimpan dengan namanya
+  function deleteName(n) {
+    if (!confirm(`Hapus nama "${n}" dari daftar?\n\nKegiatan dan catatan milik ${n} tetap tersimpan dan tetap memakai nama ini.`)) return;
+    state.hiddenNames = [...new Set([...(state.hiddenNames || []), n])];
+    if (state.lastName === n) state.lastName = '';
+    save(); renderNamePick(); if (current) syncDialog(); toast(`Nama "${n}" dihapus dari daftar`);
+  }
   function renderAddPick() { ddLabel($('#typeBtn'), newType); }
   // Tombol ‹ ›: minggu = mundur/maju 7 hari, bulan = ke awal bulan sebelum/sesudahnya (tanggal terpilih tidak berubah)
   function shiftView(dir) {
@@ -1555,21 +1629,16 @@
     $('#pinBtn').setAttribute('aria-pressed', !!current.pinned);
     $('#noteMeta').textContent = 'Diubah ' + fmtTime(current.updated);
     ddLabel($('#noteTypeBtn'), typeOf(current));
-    const names = knownNames(), cur = current.name || '';
-    if (cur && !names.includes(cur)) names.unshift(cur);
-    buildPick($('#noteName'), names.map(n => [n, n]), cur, v => {
-      if (current.name === v) delete current.name; else current.name = v;
-      $('#noteNameInput').value = ''; touch(); syncDialog();
-    });
-    $('#noteName').querySelectorAll('.pri-btn').forEach((b, i) => paintPerson(b, names[i]));
+    ddName($('#noteNameBtn'), current.name || '');
   }
-  function setNoteNameFromInput() {
-    const v = $('#noteNameInput').value.trim().slice(0, 40);
-    if (!v || !current) return;
-    current.name = v; state.lastName = v; $('#noteNameInput').value = ''; touch(); syncDialog(); renderNamePick();
-  }
-  $('#noteNameInput').onchange = setNoteNameFromInput;
-  $('#noteNameInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); setNoteNameFromInput(); $('#noteBody').focus(); } };
+  $('#noteNameBtn').onclick = e => {
+    e.stopPropagation();
+    if (!nameMenu.hidden && nameKey === 'note') { closeNameMenu(); return; }
+    openNameMenu($('#noteNameBtn'), current.name || '', v => {
+      if (v) { current.name = v; state.lastName = v; renderNamePick(); } else delete current.name;
+      touch(); syncDialog();
+    }, 'note');
+  };
   function touch() { current.updated = Date.now(); save(); renderNotes(); }
   function openNote(n) {
     current = n;
@@ -1595,7 +1664,7 @@
     toggleTypeMenu($('#noteTypeBtn'), typeOf(current), v => { if (v) current.type = v; else delete current.type; touch(); syncDialog(); }, 'note');
   };
   dlg.addEventListener('close', () => {
-    closeTypeMenu();
+    closeTypeMenu(); closeNameMenu();
     if (current && !current.title.trim() && !current.body.trim()) {
       state.notes.splice(state.notes.indexOf(current), 1); save();
     }
