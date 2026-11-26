@@ -129,15 +129,20 @@
   .pill-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 12px; font-size: 13px; font-weight: 600; }
   .pill-btn[hidden] { display: none; }
   /* Kalender: 3 halaman (sebelum, sekarang, sesudah). Minggu digeser ke samping, bulan digeser naik-turun */
+  /* Kalender mingguan: pita hari panjang, digeser per hari. Bulanan: daftar minggu, digeser per minggu */
   .week {
-    position: relative; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
-    scrollbar-width: none; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; margin: 0 -2px;
+    position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 36px) / 7); gap: 6px;
+    padding: 7px 2px 4px; margin: 0 -2px; scroll-padding: 7px 2px 4px;
+    overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+    scrollbar-width: none; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
   }
   .week::-webkit-scrollbar { display: none; }
-  .cal-page { flex: 0 0 100%; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 7px 2px 4px; scroll-snap-align: start; scroll-snap-stop: always; }
-  .week.month { display: block; overflow-x: hidden; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior-y: contain; }
-  .week.month .cal-page { row-gap: 6px; }
-  .dow-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 0 0 0; margin-bottom: -3px; }
+  .week > .chip { scroll-snap-align: start; }
+  .week.month {
+    grid-auto-flow: row; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-columns: auto;
+    overflow-x: hidden; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior-y: contain;
+  }
+  .dow-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 0 2px; margin-bottom: -3px; }
   .dow-row[hidden] { display: none; }
   .chip {
     border: 1px solid var(--line); background: var(--surface); border-radius: 15px; padding: 10px 0 8px;
@@ -852,6 +857,7 @@
   let state = load();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast('Gagal menyimpan: penyimpanan browser penuh'); } queueNotifSync(); };
   let selected = todayKey();
+  let viewStart = null; // hari pertama yang terlihat di kalender (tidak ikut berubah saat tanggal diketuk)
 
   // ---------- Theme ----------
   // [id, nama, warna mode terang, warna mode gelap]
@@ -1032,50 +1038,73 @@
     return b;
   }
 
+  const weekStartKey = k => { const d = fromKey(k); d.setDate(d.getDate() - d.getDay()); return keyOf(d); };
+  const monthFirst = k => k.slice(0, 8) + '01';
+  const BEFORE_DAYS = 28, AFTER_DAYS = 34, BEFORE_WEEKS = 8, AFTER_WEEKS = 14;
+
   function renderWeek() {
-    const sel = fromKey(selected), open = !!state.calOpen, tk = todayKey();
-    $('#monthLabel').textContent = sel.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-    const wk = $('#week'); wk.classList.toggle('month', open);
+    const open = !!state.calOpen, tk = todayKey(), wk = $('#week');
+    if (!viewStart) viewStart = open ? weekStartKey(monthFirst(selected)) : weekStartKey(selected);
+    if (open) viewStart = weekStartKey(viewStart);
+    wk.classList.toggle('month', open);
     $('#dowRow').hidden = !open;
-    const pages = [-1, 0, 1].map(off => {
-      const pg = el('div', 'cal-page');
-      let start, ref = null;
-      if (open) {
-        const m = fromKey(addMonths(selected, off)), first = new Date(m.getFullYear(), m.getMonth(), 1);
-        start = new Date(first); start.setDate(1 - first.getDay()); ref = first.getMonth();
-      } else {
-        start = fromKey(addDays(selected, off * 7)); start.setDate(start.getDate() - start.getDay());
-      }
-      for (let i = 0; i < (open ? 42 : 7); i++) { const d = new Date(start); d.setDate(start.getDate() + i); pg.append(makeChip(d, open, ref, tk)); }
-      if (off) { pg.inert = true; pg.setAttribute('aria-hidden', 'true'); }
-      return pg;
-    });
-    wk.replaceChildren(...pages);
-    // Tampilkan halaman tengah tanpa memicu pindah minggu/bulan
+    // Bangun rentang di sekitar viewStart: minggu = per hari, bulan = per minggu (7 sel per baris)
+    const first = open ? addDays(viewStart, -BEFORE_WEEKS * 7) : addDays(viewStart, -BEFORE_DAYS);
+    const count = open ? (BEFORE_WEEKS + AFTER_WEEKS) * 7 : BEFORE_DAYS + 7 + AFTER_DAYS;
+    const keys = Array.from({ length: count }, (_, i) => addDays(first, i));
+    wk._keys = keys;
+    wk.replaceChildren(...keys.map(k => makeChip(fromKey(k), open, null, tk)));
+    const startIdx = open ? BEFORE_WEEKS * 7 : BEFORE_DAYS;
     wk._quiet = true;
-    if (open) { wk.style.height = pages[1].offsetHeight + 'px'; wk.scrollLeft = 0; wk.scrollTop = pages[1].offsetTop; }
-    else { wk.style.height = ''; wk.scrollTop = 0; wk.scrollLeft = pages[1].offsetLeft; }
+    if (open) {
+      const c0 = wk.children[0], ch = wk.children[7].offsetTop - c0.offsetTop;
+      wk.style.height = (ch * 6 - 6 + 11) + 'px'; // 6 baris terlihat + padding atas/bawah
+      wk.scrollLeft = 0; wk.scrollTop = (startIdx / 7) * ch;
+    } else {
+      const cw = wk.children[1].offsetLeft - wk.children[0].offsetLeft;
+      wk.style.height = ''; wk.scrollTop = 0; wk.scrollLeft = startIdx * cw;
+    }
     clearTimeout(wk._qt); wk._qt = setTimeout(() => { wk._quiet = false; }, 120);
+    updateCalView(startIdx);
     $('#calLegend').hidden = !open;
     $('#calToggle').setAttribute('aria-expanded', open);
     $('#calToggleText').textContent = open ? 'Tutup kalender' : 'Lihat sebulan';
     $('#prevWeek').setAttribute('aria-label', open ? 'Bulan sebelumnya' : 'Minggu sebelumnya');
     $('#nextWeek').setAttribute('aria-label', open ? 'Bulan berikutnya' : 'Minggu berikutnya');
-    $('#goToday').hidden = selected === tk;
   }
-  // Geser kalender: setelah berhenti di halaman kiri/kanan (atau atas/bawah), pindah minggu/bulan lalu kembali ke tengah
+  // Label bulan + tanggal samar (bulan lain) mengikuti bagian kalender yang sedang terlihat
+  function updateCalView(idx) {
+    const wk = $('#week'), open = !!state.calOpen, keys = wk._keys;
+    const mid = keys[Math.min(keys.length - 1, idx + (open ? 2 * 7 + 3 : 3))];
+    const vm = mid.slice(0, 7);
+    wk._month = vm;
+    $('#monthLabel').textContent = fromKey(mid).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    if (open) [...wk.children].forEach((c, i) => c.classList.toggle('out', keys[i].slice(0, 7) !== vm));
+    const vis = keys.slice(idx, idx + (open ? 42 : 7)), tk = todayKey();
+    $('#goToday').hidden = selected === tk && vis.includes(tk);
+  }
+  // Setelah geseran berhenti: catat hari/minggu pertama yang terlihat; bangun ulang kalau sudah dekat ujung
   (() => {
-    const wk = $('#week'); let t;
+    const wk = $('#week'); let t, lastIdx = -1;
     const settle = () => {
-      if (wk._quiet) return;
-      const open = !!state.calOpen, pg = wk.children[1]; if (!pg) return;
-      const pos = open ? wk.scrollTop / pg.offsetHeight : wk.scrollLeft / pg.offsetWidth;
-      const i = Math.round(pos);
-      if (i === 1 || Math.abs(pos - i) > .05) return;
-      selected = open ? addMonths(selected, i - 1) : addDays(selected, (i - 1) * 7);
-      sfx.page(); haptic(); renderTasks();
+      if (wk._quiet || !wk._keys) return;
+      const open = !!state.calOpen, c = wk.children;
+      let idx;
+      if (open) { const ch = c[7].offsetTop - c[0].offsetTop; idx = Math.round(wk.scrollTop / ch) * 7; }
+      else { const cw = c[1].offsetLeft - c[0].offsetLeft; idx = Math.round(wk.scrollLeft / cw); }
+      const k = wk._keys[idx]; if (!k) return;
+      if (k !== viewStart) { viewStart = k; sfx.page(); haptic(); }
+      const len = wk._keys.length, edge = open ? 21 : 10, vis = open ? 42 : 7;
+      if (idx < edge || idx > len - vis - edge) renderWeek(); else updateCalView(idx);
+      lastIdx = idx;
     };
-    wk.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(settle, 150); }, { passive: true });
+    wk.addEventListener('scroll', () => {
+      clearTimeout(t); t = setTimeout(settle, 150);
+      if (wk._quiet || !wk._keys) return;
+      const open = !!state.calOpen, c = wk.children; // tik halus tiap lewat satu hari/minggu
+      const idx = open ? Math.round(wk.scrollTop / (c[7].offsetTop - c[0].offsetTop)) * 7 : Math.round(wk.scrollLeft / (c[1].offsetLeft - c[0].offsetLeft));
+      if (idx !== lastIdx) { if (lastIdx >= 0) sfx.tick(); lastIdx = idx; }
+    }, { passive: true });
     if ('onscrollend' in window) wk.addEventListener('scrollend', () => { clearTimeout(t); settle(); });
   })();
 
@@ -1434,18 +1463,25 @@
   };
   $('#nameInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('#taskText').focus(); } };
   function renderAddPick() { ddLabel($('#typeBtn'), newType); }
-  $('#prevWeek').onclick = () => { selected = state.calOpen ? addMonths(selected, -1) : addDays(selected, -7); renderTasks(); };
-  $('#nextWeek').onclick = () => { selected = state.calOpen ? addMonths(selected, 1) : addDays(selected, 7); renderTasks(); };
+  // Tombol ‹ ›: minggu = mundur/maju 7 hari, bulan = ke awal bulan sebelum/sesudahnya (tanggal terpilih tidak berubah)
+  function shiftView(dir) {
+    viewStart = state.calOpen ? weekStartKey(addMonths(($('#week')._month || selected.slice(0, 7)) + '-01', dir)) : addDays(viewStart, dir * 7);
+    renderWeek();
+  }
+  $('#prevWeek').onclick = () => shiftView(-1);
+  $('#nextWeek').onclick = () => shiftView(1);
   $('#calToggle').onclick = () => {
     const wk = $('#week'), h0 = wk.offsetHeight;
-    state.calOpen = !state.calOpen; save(); renderWeek();
+    state.calOpen = !state.calOpen; save();
+    viewStart = state.calOpen ? weekStartKey(monthFirst(selected)) : weekStartKey(selected);
+    renderWeek();
     const h1 = wk.offsetHeight;
     if (!wk.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     wk.style.overflow = 'hidden';
     wk.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 320, easing: 'cubic-bezier(.3,.8,.3,1)' })
       .onfinish = () => { wk.style.overflow = ''; };
   };
-  $('#goToday').onclick = () => { selected = todayKey(); renderTasks(); };
+  $('#goToday').onclick = () => { selected = todayKey(); viewStart = state.calOpen ? weekStartKey(monthFirst(selected)) : weekStartKey(selected); renderTasks(); };
 
   function celebrate() {
     const list = state.tasks[selected] || [];
