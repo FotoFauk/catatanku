@@ -748,7 +748,16 @@
       const [a, b] = up ? [784, 1175] : [1175, 784];
       note(c, a, 0, .16, .08); note(c, b, .075, .22, .07);
     }
-    return { tick: () => blip(2400, .016, .045, 'square'), tap: () => blip(1100, .04, .07, 'triangle'), swap };
+    function chord(notes, gap, dur, vol) { // arpeggio: nada dimainkan berurutan
+      if (!state.feedback) return;
+      const c = ac(); if (!c) return;
+      notes.forEach((f, i) => note(c, f, i * gap, dur + (i === notes.length - 1 ? .25 : 0), vol));
+    }
+    return {
+      tick: () => blip(2400, .016, .045, 'square'), tap: () => blip(1100, .04, .07, 'triangle'), swap,
+      done: () => chord([1047, 1319, 1568], .07, .18, .08),            // satu kegiatan selesai
+      allDone: () => chord([784, 988, 1175, 1568, 1976], .085, .2, .075) // semua kegiatan hari itu selesai
+    };
   })();
   let hapticBusy = false;
   function haptic() {
@@ -1198,11 +1207,12 @@
     const f = e.target.files[0], t = photoTarget; e.target.value = ''; photoTarget = null;
     if (!f || !t) return;
     try {
-      const blob = await compressPhoto(f), old = t.photo, id = 'foto-' + uid();
+      const blob = await compressPhoto(f), old = t.photo, id = 'foto-' + uid(), wasDone = t.done;
       await fotoDB.put(id, blob);
       t.photo = id; t.photoAt = Date.now(); t.done = true; save();
       if (old) { fotoDB.del(old); dropURL(old); }
-      renderTasks(); toast('Foto terkirim, tugas selesai ✅'); celebrate();
+      renderTasks(); toast(wasDone ? 'Foto bukti diganti' : 'Foto terkirim, tugas selesai ✅');
+      if (!wasDone) { const all = celebrate(); if (all) sfx.allDone(); else sfx.done(); haptic(); }
       if (photoDlg.open) openPhoto(t);
     } catch (err) { toast('Foto tidak bisa dibuka. Pakai JPG atau PNG'); }
   };
@@ -1403,7 +1413,9 @@
 
   function celebrate() {
     const list = state.tasks[selected] || [];
-    if (list.length && list.every(t => t.done)) toast('Mantap! Semua kegiatan selesai 🎉');
+    const all = list.length && list.every(t => t.done);
+    if (all) toast('Mantap! Semua kegiatan selesai 🎉');
+    return all;
   }
 
   // ---------- Catatan ----------
