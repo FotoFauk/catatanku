@@ -735,7 +735,20 @@
       g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
       o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + .02);
     }
-    return { tick: () => blip(2400, .016, .045, 'square'), tap: () => blip(1100, .04, .07, 'triangle') };
+    // Nada lembut (sine) dengan awal halus, untuk bunyi lonceng pindah tab
+    function note(c, freq, at, dur, vol) {
+      const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + at;
+      o.type = 'sine'; o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + .02);
+    }
+    function swap(up) { // naik ke Catatan, turun ke Kegiatan
+      if (!state.feedback) return;
+      const c = ac(); if (!c) return;
+      const [a, b] = up ? [784, 1175] : [1175, 784];
+      note(c, a, 0, .16, .08); note(c, b, .075, .22, .07);
+    }
+    return { tick: () => blip(2400, .016, .045, 'square'), tap: () => blip(1100, .04, .07, 'triangle'), swap };
   })();
   let hapticBusy = false;
   function haptic() {
@@ -752,7 +765,7 @@
   document.addEventListener('click', e => {
     if (hapticBusy) return;
     const b = e.target.closest && e.target.closest('button, .chip-btn, label.acc');
-    if (!b || b.closest('.wheel')) return;
+    if (!b || b.closest('.wheel') || b.classList.contains('tab')) return; // tab punya bunyi sendiri
     sfx.tap(); haptic();
   }, true);
 
@@ -942,7 +955,10 @@
     document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + t));
   }
-  document.querySelectorAll('.tab').forEach(b => b.onclick = () => setTab(b.dataset.tab));
+  document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+    if (state.tab !== b.dataset.tab) sfx.swap(b.dataset.tab === 'catatan'); else sfx.tap();
+    haptic(); setTab(b.dataset.tab);
+  });
 
   function renderBadges() {
     const open = (state.tasks[todayKey()] || []).filter(t => !t.done).length;
