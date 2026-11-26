@@ -266,7 +266,9 @@
   }
   .add:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
   .add input[type="time"] { border: 0; background: var(--bg); border-radius: 11px; padding: 0 8px; width: 104px; font-weight: 600; font-size: 14px; }
-  .add input[type="text"] { flex: 1; border: 0; background: none; padding: 11px 8px; outline: none; min-width: 0; font-size: 15px; }
+  .add input[type="text"] { flex: 1; border: 0; background: none; padding: 15px 10px; outline: none; min-width: 0; font-size: 16px; font-weight: 500; }
+  .add { padding: 7px; }
+  .add > button { min-width: 50px; justify-content: center; }
   .add input::placeholder { color: var(--muted); }
   .add > button { border: 0; background: var(--ink); color: var(--bg); font-weight: 700; border-radius: 11px; padding: 0 16px; display: flex; align-items: center; gap: 6px; transition: transform .15s; }
   .add > button:active { transform: scale(.95); }
@@ -289,6 +291,7 @@
   }
   .need-photo:hover { border-style: solid; }
   #namePick { margin: 0 0 8px; }
+  #namePick .lbl, #taskPri .lbl, #noteName .lbl, #notePri .lbl { min-width: 82px; }
   #nameFilter { margin: 0 0 12px; }
   .pri-btn.person i { background: var(--pri); }
   .pri-btn.person.anon::before { content: "👤"; font-size: 11px; }
@@ -635,7 +638,7 @@
       <input type="text" id="taskText" placeholder="Mau ngapain hari ini?" aria-label="Kegiatan baru" maxlength="200">
       <button type="submit" aria-label="Tambah kegiatan"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Tambah</span></button>
     </form>
-    <input type="file" id="taskPhoto" accept="image/*" hidden>
+    <input type="file" id="taskPhoto" accept="image/*" capture="environment" hidden>
 
     <div class="pri-pick" id="nameFilter" role="group" aria-label="Tampilkan kegiatan milik" hidden><span class="lbl">Tampilkan:</span></div>
     <ul class="tasks" id="taskList"></ul>
@@ -796,14 +799,32 @@
       tick: () => blip(2400, .016, .045, 'square'), tap: () => blip(1100, .04, .07, 'triangle'), swap,
       done: () => chord([1047, 1319, 1568], .07, .18, .08),            // satu kegiatan selesai
       allDone: () => chord([784, 988, 1175, 1568, 1976], .085, .2, .075), // semua kegiatan hari itu selesai
-      wheel: () => { // klik mekanis pendek seperti roda alarm iPhone
+      wheel: () => { // "tok" lembut seperti roda pemilih jam iPhone
         if (!state.feedback) return;
         const c = ac(); if (!c) return;
-        const len = Math.floor(c.sampleRate * .012), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 6);
-        const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
-        src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 1.4; g.gain.value = .55;
-        src.connect(bp).connect(g).connect(c.destination); src.start();
+        const t = c.currentTime;
+        // badan bunyi: nada sine pendek yang turun cepat
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(1750, t); o.frequency.exponentialRampToValueAtTime(950, t + .022);
+        g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.16, t + .0015); g.gain.exponentialRampToValueAtTime(.0001, t + .03);
+        o.connect(g).connect(c.destination); o.start(t); o.stop(t + .04);
+        // ujung renyah: desis sangat singkat lewat filter tinggi
+        const len = Math.floor(c.sampleRate * .006), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+        const n = c.createBufferSource(), hp = c.createBiquadFilter(), ng = c.createGain();
+        n.buffer = buf; hp.type = 'highpass'; hp.frequency.value = 4500; ng.gain.value = .12;
+        n.connect(hp).connect(ng).connect(c.destination); n.start(t);
+      },
+      note: () => { // catatan tersimpan: "srek" kertas lalu "ting"
+        if (!state.feedback) return;
+        const c = ac(); if (!c) return;
+        const t = c.currentTime, len = Math.floor(c.sampleRate * .14), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len);
+        const n = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+        n.buffer = buf; bp.type = 'bandpass'; bp.Q.value = .9;
+        bp.frequency.setValueAtTime(900, t); bp.frequency.exponentialRampToValueAtTime(3800, t + .14); g.gain.value = .22;
+        n.connect(bp).connect(g).connect(c.destination); n.start(t);
+        note(c, 1568, .11, .3, .07); note(c, 2093, .17, .35, .045);
       },
       add: () => chord([523, 1047], .06, .13, .09),                      // jadwal baru ditambahkan ("plop-ting")
       page: () => chord([440], 0, .07, .05)                              // kalender digeser
@@ -1649,7 +1670,7 @@
   $('#newNote').onclick = () => {
     const n = { id: uid(), title: '', body: '', color: 'plain', pinned: false, updated: Date.now() };
     if (state.lastName) n.name = state.lastName;
-    state.notes.push(n); openNote(n);
+    n._new = true; state.notes.push(n); openNote(n);
   };
   $('#noteTitle').oninput = e => { current.title = e.target.value; touch(); $('#noteMeta').textContent = 'Tersimpan otomatis'; };
   $('#noteBody').oninput = e => { current.body = e.target.value; touch(); $('#noteMeta').textContent = 'Tersimpan otomatis'; };
@@ -1667,6 +1688,8 @@
     closeTypeMenu(); closeNameMenu();
     if (current && !current.title.trim() && !current.body.trim()) {
       state.notes.splice(state.notes.indexOf(current), 1); save();
+    } else if (current && current._new) {
+      delete current._new; save(); sfx.note(); haptic(); toast('Catatan tersimpan');
     }
     current = null; renderNotes();
   });
