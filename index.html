@@ -292,6 +292,11 @@
   .need-photo:hover { border-style: solid; }
   #namePick { margin: 0 0 8px; }
   #namePick .lbl, #taskPri .lbl, #noteName .lbl, #notePri .lbl { min-width: 82px; }
+  #nameBtn, #typeBtn, #noteNameBtn, #noteTypeBtn {
+    width: 200px; max-width: calc(100% - 92px); justify-content: flex-start; padding: 10px 14px 10px 12px; font-size: 14px;
+  }
+  #nameBtn .chev, #typeBtn .chev, #noteNameBtn .chev, #noteTypeBtn .chev { margin-left: auto; }
+  #nameBtn > span:not(.nm-ico), #typeBtn > span, #noteNameBtn > span:not(.nm-ico), #noteTypeBtn > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #nameFilter { margin: 0 0 12px; }
   .pri-btn.person i { background: var(--pri); }
   .pri-btn.person.anon::before { content: "👤"; font-size: 11px; }
@@ -505,7 +510,7 @@
   .toast button { border: 0; background: var(--accent); color: #fff; border-radius: 9px; padding: 6px 12px; font-weight: 700; font-size: 13px; }
   .toast button[hidden] { display: none; }
 
-  footer { text-align: center; color: var(--on-bg-muted); font-size: 12px; margin-top: 40px; }
+  footer { text-align: center; color: var(--on-bg-muted); font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: lowercase; margin-top: 40px; }
 
   @keyframes fade { from { opacity: 0; } }
   @keyframes slide { from { opacity: 0; transform: translateY(6px); } }
@@ -669,7 +674,7 @@
     </div>
   </section>
 
-  <footer>Data tersimpan otomatis di browser ini. Unduh cadangan secara berkala lewat menu ⋮</footer>
+  <footer>moment with us</footer>
 </div>
 
 <dialog id="noteDialog">
@@ -1491,6 +1496,7 @@
   // Tombol drop-down nama: titik warna + nama, atau "Pilih nama"
   function ddName(btn, n) {
     btn.classList.toggle('person', !!n);
+    btn.dataset.type = n ? 'name' : 'none';
     if (n) btn.style.setProperty('--pri', colorOf(n)); else btn.style.removeProperty('--pri');
     btn.replaceChildren();
     if (n) btn.append(el('i', 'nm-dot'), el('span', null, n)); else btn.append(el('span', 'nm-ico', '👤'), el('span', null, 'Pilih nama'));
