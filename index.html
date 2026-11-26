@@ -318,12 +318,14 @@
     animation: drop .18s ease;
   }
   .time-pop[hidden] { display: none; }
+  .time-pop, .tp-wheels { touch-action: pan-y; overscroll-behavior: contain; overflow-x: hidden; }
+  body { overflow-x: hidden; }
   .tp-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 2px 2px 6px; }
   .time-pop { width: 248px; }
   .tp-heads { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 20px; }
   .tp-wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 4px; height: 200px; margin: 4px 0 12px; }
   .wheel {
-    position: relative; z-index: 1; height: 200px; width: 86px; overflow-y: auto; scroll-snap-type: y mandatory;
+    position: relative; z-index: 1; height: 200px; width: 86px; overflow-x: hidden; overflow-y: auto; scroll-snap-type: y mandatory; touch-action: pan-y;
     scrollbar-width: none; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     -webkit-mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent); mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent);
   }
@@ -693,7 +695,7 @@
     // bola sepak
     sport: '<circle cx="12" cy="12" r="9"/><path d="m12 8.2 3.6 2.6-1.4 4.2H9.8l-1.4-4.2z"/><path d="M12 8.2V3.1M15.6 10.8l4.8-1.6M14.2 15l2.9 4.1M9.8 15l-2.9 4.1M8.4 10.8 3.6 9.2"/>',
     // perisai tim PSPS
-    psps: '<path d="M12 2.8 4.6 5.7v5.6c0 4.7 3.1 8.6 7.4 9.9 4.3-1.3 7.4-5.2 7.4-9.9V5.7z"/><path d="M12 7.5v9.5M8.2 10.5h7.6"/>',
+    psps: '<path d="M12 2.8 4.6 5.7v5.6c0 4.7 3.1 8.6 7.4 9.9 4.3-1.3 7.4-5.2 7.4-9.9V5.7z"/>',
     // papan klep film (cut)
     agency: '<rect x="3" y="10" width="18" height="11" rx="2"/><path d="M3.4 10 2.8 7.3a1.4 1.4 0 0 1 1-1.7L17.9 2.4a1.4 1.4 0 0 1 1.7 1l.6 2.6z"/><path d="m7.2 5.1 2.6 3.6M12.3 3.9l2.6 3.6"/>',
     // lampu studio (softbox + tripod)
