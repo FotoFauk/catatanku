@@ -419,6 +419,23 @@
   .photo-body b { font-size: 17px; }
   .photo-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
   .photo-actions .done-btn { margin-left: auto; }
+  /* Pilih sumber foto bukti: kamera atau galeri */
+  .src-dlg { width: min(400px, calc(100% - 24px)); background: var(--surface); }
+  .src-body { padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .src-body .photo-label { text-align: center; }
+  .src-task { text-align: center; font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .src-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+  .src-opt {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 8px 14px;
+    border: 1.5px solid var(--line); border-radius: 16px; background: var(--bg); font-size: 14px; font-weight: 700; color: var(--ink);
+    transition: border-color .15s, transform .1s;
+  }
+  .src-opt:hover { border-color: var(--accent); }
+  .src-opt:active { transform: scale(.96); }
+  .src-opt .ic { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: var(--accent); }
+  .src-opt.gal .ic { background: var(--ok); }
+  .src-opt small { font-size: 11px; font-weight: 500; color: var(--muted); margin-top: -4px; }
+  .src-cancel { border: 0; background: none; color: var(--muted); font-size: 14px; font-weight: 600; padding: 8px; }
   .pill-btn.danger { color: #d9433a; }
   .tag {
     display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
@@ -643,6 +660,7 @@
     </div>
     <p class="rule-note">📷&nbsp; Setiap tugas baru bisa dicentang selesai setelah kamu mengirim foto bukti.</p>
     <input type="file" id="taskPhoto" accept="image/*" capture="environment" hidden>
+    <input type="file" id="taskGallery" accept="image/*" hidden>
 
     <div class="pri-pick" id="nameFilter" role="group" aria-label="Tampilkan kegiatan milik" hidden><span class="lbl">Tampilkan:</span></div>
     <ul class="tasks" id="taskList"></ul>
@@ -704,6 +722,18 @@
       <button type="button" class="pill-btn danger" id="photoRemove">Hapus foto</button>
       <button type="button" class="done-btn" id="photoClose">Tutup</button>
     </div>
+  </div>
+</dialog>
+
+<dialog id="srcDialog" class="src-dlg" aria-label="Kirim foto bukti">
+  <div class="src-body">
+    <p class="photo-label">📷 Kirim foto bukti</p>
+    <p class="src-task" id="srcTask"></p>
+    <div class="src-opts">
+      <button type="button" class="src-opt cam" id="srcCam"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>Kamera<small>Foto sekarang</small></button>
+      <button type="button" class="src-opt gal" id="srcGal"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17 5-4.5 4 3.5 2.5-2 4.5 3.5"/></svg></span>Galeri<small>Pilih dari HP</small></button>
+    </div>
+    <button type="button" class="src-cancel" id="srcCancel">Batal</button>
   </div>
 </dialog>
 
@@ -1321,7 +1351,18 @@
     return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('gagal')), 'image/jpeg', .82));
   }
   let photoTarget = null;
-  function askPhoto(t) { photoTarget = t; $('#taskPhoto').click(); }
+  const srcDlg = $('#srcDialog');
+  function askPhoto(t) {
+    photoTarget = t;
+    $('#srcTask').textContent = t.text;
+    srcDlg.showModal();
+  }
+  const pickFrom = id => { srcDlg.close(); $(id).click(); };
+  $('#srcCam').onclick = () => pickFrom('#taskPhoto');
+  $('#srcGal').onclick = () => pickFrom('#taskGallery');
+  $('#srcCancel').onclick = () => { srcDlg.close(); photoTarget = null; };
+  srcDlg.addEventListener('click', e => { if (e.target === srcDlg) { srcDlg.close(); photoTarget = null; } });
+  $('#taskGallery').onchange = e => $('#taskPhoto').onchange(e);
   $('#taskPhoto').onchange = async e => {
     const f = e.target.files[0], t = photoTarget; e.target.value = ''; photoTarget = null;
     if (!f || !t) return;
